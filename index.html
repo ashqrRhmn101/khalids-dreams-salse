@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0D0D0D" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <title>Khalid's Dreams — Sales</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <!-- Bangla font from Google Fonts CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="data/bangladesh.js"></script>
+  </head>
+  <body>
+    <!-- ══ NAVBAR ══ -->
+    <nav class="navbar">
+      <a class="nav-logo" href="#">
+        <div class="logo-icon">KD</div>
+        <div class="logo-text">
+          <span class="ln1">Khalid's Dreams</span>
+          <span class="ln2">Sales Management</span>
+        </div>
+      </a>
+      <div class="nav-right">
+        <span id="nav-datetime" class="nav-date-text"></span>
+        <div class="nav-badge">⭐ Premium</div>
+      </div>
+    </nav>
+
+    <!-- ══ TOTAL BANNER ══ -->
+    <div class="total-banner">
+      <div class="banner-top">
+        <div class="total-label">
+          <div class="tl-main">আজকের মোট আয়</div>
+          <div class="tl-sub">প্রতি মধ্যরাতে রিসেট হয়</div>
+        </div>
+        <div class="total-amount-value" id="daily-total-value">
+          <span class="currency-sign">৳</span>0.00
+        </div>
+      </div>
+      <div class="banner-stats">
+        <div class="stat-item">
+          <span class="num" id="daily-sales-count">0</span>
+          <span class="lbl">সেল আজকে</span>
+        </div>
+        <div class="stat-item">
+          <span class="num">🟢</span>
+          <span class="lbl">চালু আছে</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MAIN FORM ══ -->
+    <div class="main-container">
+      <!-- 1. Customer Info -->
+      <div class="section-card">
+        <div class="section-title">
+          <div class="icon">👤</div>
+          গ্রাহকের তথ্য
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="cust-name">গ্রাহকের নাম *</label>
+            <input
+              type="text"
+              id="cust-name"
+              placeholder="পুরো নাম লিখুন..."
+              autocomplete="name"
+            />
+          </div>
+          <div class="form-group">
+            <label for="cust-phone">ফোন নম্বর *</label>
+            <input
+              type="tel"
+              id="cust-phone"
+              placeholder="01XXXXXXXXX"
+              autocomplete="tel"
+              inputmode="numeric"
+            />
+          </div>
+          <div class="form-group">
+            <label for="district">জেলা *</label>
+            <select id="district" onchange="onDistrictChange()">
+              <option value="">-- জেলা সিলেক্ট করুন --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="thana">থানা / উপজেলা</label>
+            <select id="thana">
+              <option value="">-- থানা সিলেক্ট করুন --</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label for="address">পূর্ণ ঠিকানা</label>
+            <input
+              type="text"
+              id="address"
+              placeholder="বাড়ি নং, রাস্তা, এলাকা..."
+              autocomplete="street-address"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Order Review -->
+      <div class="section-card">
+        <div class="section-title">
+          <div class="icon">📦</div>
+          অর্ডার বিবরণ
+        </div>
+
+        <!-- Column Headers -->
+        <div class="order-header">
+          <span></span>
+          <span>পণ্যের নাম</span>
+          <span>মূল্য (৳)</span>
+          <span></span>
+        </div>
+
+        <div id="order-items-container"></div>
+
+        <button class="add-item-btn" onclick="addOrderItem()">
+          ➕ আরেকটি পণ্য যোগ করুন
+        </button>
+
+        <div class="order-total-row">
+          <span class="label">অর্ডার সাবটোটাল</span>
+          <span class="value" id="order-subtotal">৳ 0.00</span>
+        </div>
+      </div>
+
+      <!-- 3. Date & Time -->
+      <div class="section-card">
+        <div class="section-title">
+          <div class="icon">🕐</div>
+          তারিখ ও সময়
+        </div>
+        <div class="form-group">
+          <label>বিক্রয়ের সময়</label>
+          <div class="datetime-field">
+            <div class="datetime-display" id="datetime-display">
+              "এখনই সেট করুন" বাটনে ক্লিক করুন
+            </div>
+            <button class="datetime-btn" onclick="setDateTime()">
+              ⚡ এখনই সেট
+            </button>
+            <input type="hidden" id="datetime-value" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Note -->
+      <div class="section-card">
+        <div class="section-title">
+          <div class="icon">📝</div>
+          বিশেষ নোট (ঐচ্ছিক)
+        </div>
+        <div class="form-group">
+          <textarea
+            id="note"
+            rows="3"
+            placeholder="অর্ডার সম্পর্কে কোনো বিশেষ নির্দেশনা বা নোট..."
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="submit-section">
+        <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">
+          🧾 সেল সম্পন্ন করুন ও PDF ডাউনলোড
+        </button>
+        <p class="submit-note">PDF ডাউনলোড হবে + Google Sheets-এ সেভ হবে</p>
+      </div>
+    </div>
+    <!-- /main-container -->
+
+    <!-- ══ FOOTER ══ -->
+    <footer>
+      <div class="footer-inner">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                margin-bottom: 6px;
+              "
+            >
+              <div
+                class="logo-icon"
+                style="width: 34px; height: 34px; font-size: 0.95rem"
+              >
+                KD
+              </div>
+              <span
+                style="
+                  font-family: &quot;Playfair Display&quot;, serif;
+                  color: var(--gold);
+                  font-size: 0.95rem;
+                  font-weight: 700;
+                "
+              >
+                Khalid's Dreams
+              </span>
+            </div>
+            <p>
+              প্রিমিয়াম বিক্রয় ব্যবস্থাপনা সিস্টেম। দ্রুত, নির্ভরযোগ্য ও
+              পেশাদার।
+            </p>
+          </div>
+          <div class="footer-col">
+            <h4>দ্রুত লিংক</h4>
+            <a href="#">🏠 হোম</a>
+            <a href="#">📊 বিক্রয় ইতিহাস</a>
+            <a href="#">📦 পণ্য তালিকা</a>
+            <a href="#">👥 গ্রাহক তালিকা</a>
+          </div>
+          <div class="footer-col">
+            <h4>যোগাযোগ</h4>
+            <a href="tel:+8801XXXXXXXXX">📞 কল করুন</a>
+            <a href="mailto:khalidsdreams@gmail.com">✉️ ইমেইল</a>
+            <a
+              href="https://www.linkedin.com/in/lavib-uddin-ashik"
+              target="_blank"
+              rel="noopener"
+            >
+              💼 LinkedIn
+            </a>
+            <a href="#">📍 আমাদের অবস্থান</a>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>© 2026 Khalid's Dreams. সর্বস্বত্ব সংরক্ষিত।</p>
+          <div class="dev-credit">
+            ⚡ Developed by
+            <a
+              href="https://www.linkedin.com/in/lavib-uddin-ashik"
+              target="_blank"
+              rel="noopener"
+            >
+              Md. Lavib Uddin Ashik
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+      <div class="toast-icon"></div>
+      <div class="toast-text"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+  </body>
+</html>
