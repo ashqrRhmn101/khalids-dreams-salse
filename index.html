@@ -28,19 +28,88 @@
   </head>
   <body>
     <!-- ══ NAVBAR ══ -->
+    <!-- ══ NAVBAR ══ -->
     <nav class="navbar">
-      <a class="nav-logo" href="#">
+      <a class="nav-logo" href="#" onclick="showPage('home')">
         <div class="logo-icon">KD</div>
         <div class="logo-text">
           <span class="ln1">Khalid's Dreams</span>
           <span class="ln2">Sales Management</span>
         </div>
       </a>
+
+      <!-- Desktop links -->
+      <div class="nav-links" id="nav-links">
+        <a href="#" class="active" onclick="showPage('home')" id="nav-home"
+          >🏠 হোম</a
+        >
+        <a href="#" onclick="showPage('products')" id="nav-products"
+          >📦 পণ্য তালিকা</a
+        >
+        <a href="#" onclick="showPage('tracker')" id="nav-tracker">
+          ⏳ অর্ডার ট্র্যাকার
+          <span class="pending-badge" id="pending-badge" style="display: none"
+            >0</span
+          >
+        </a>
+      </div>
+
       <div class="nav-right">
-        <span id="nav-datetime" class="nav-date-text"></span>
+        <span
+          id="nav-datetime"
+          style="font-size: 0.75rem; color: var(--white-dim)"
+        ></span>
         <div class="nav-badge">⭐ Premium</div>
+        <!-- Mobile hamburger -->
+        <button
+          class="nav-hamburger"
+          onclick="openMobileMenu()"
+          aria-label="Menu"
+        >
+          ☰
+        </button>
       </div>
     </nav>
+
+    <!-- Mobile Menu -->
+    <div class="nav-menu" id="nav-menu" onclick="closeMobileMenu(event)">
+      <div class="nav-menu-inner">
+        <button class="nav-close-btn" onclick="closeMobileMenu()">✕</button>
+        <a
+          href="#"
+          onclick="
+            showPage('home');
+            closeMobileMenu();
+          "
+        >
+          <span class="nav-icon">🏠</span> হোম
+        </a>
+        <a
+          href="#"
+          onclick="
+            showPage('products');
+            closeMobileMenu();
+          "
+        >
+          <span class="nav-icon">📦</span> পণ্য তালিকা
+        </a>
+        <a
+          href="#"
+          onclick="
+            showPage('tracker');
+            closeMobileMenu();
+          "
+        >
+          <span class="nav-icon">⏳</span> অর্ডার ট্র্যাকার
+          <span
+            class="pending-badge"
+            id="pending-badge-mob"
+            style="display: none"
+            >0</span
+          >
+        </a>
+      </div>
+    </div>
 
     <!-- ══ TOTAL BANNER ══ -->
     <div class="total-banner">
@@ -268,5 +337,36 @@
     </div>
 
     <script src="js/app.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/tracker.js"></script>
+
+    <script>
+      // ── PAGE NAVIGATION ──
+      function showPage(page) {
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("active"));
+        document
+          .querySelectorAll(".nav-links a")
+          .forEach((a) => a.classList.remove("active"));
+        document.getElementById("page-" + page).classList.add("active");
+        const navEl = document.getElementById("nav-" + page);
+        if (navEl) navEl.classList.add("active");
+        window.scrollTo(0, 0);
+        if (page === "products") initProducts();
+        if (page === "tracker") initTracker();
+      }
+
+      // ── MOBILE MENU ──
+      function openMobileMenu() {
+        document.getElementById("nav-menu").classList.add("open");
+        document.body.style.overflow = "hidden";
+      }
+      function closeMobileMenu(e) {
+        if (e && e.target !== document.getElementById("nav-menu")) return;
+        document.getElementById("nav-menu").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+    </script>
   </body>
 </html>
