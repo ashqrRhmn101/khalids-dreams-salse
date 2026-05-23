@@ -1,372 +1,568 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="bn">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
-    <meta name="theme-color" content="#0D0D0D" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <title>Khalid's Dreams — Sales</title>
-    <link rel="stylesheet" href="css/style.css" />
-    <!-- Bangla font from Google Fonts CDN -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap"
-      rel="stylesheet"
-    />
-    <!-- Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="data/bangladesh.js"></script>
-  </head>
-  <body>
-    <!-- ══ NAVBAR ══ -->
-    <!-- ══ NAVBAR ══ -->
-    <nav class="navbar">
-      <a class="nav-logo" href="#" onclick="showPage('home')">
-        <div class="logo-icon">KD</div>
-        <div class="logo-text">
-          <span class="ln1">Khalid's Dreams</span>
-          <span class="ln2">Sales Management</span>
-        </div>
-      </a>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#0D0D0D" />
+  <title>Khalid's Dreams — Sales Management</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="data/bangladesh.js"></script>
+</head>
+<body>
 
-      <!-- Desktop links -->
-      <div class="nav-links" id="nav-links">
-        <a href="#" class="active" onclick="showPage('home')" id="nav-home"
-          >🏠 হোম</a
-        >
-        <a href="#" onclick="showPage('products')" id="nav-products"
-          >📦 পণ্য তালিকা</a
-        >
-        <a href="#" onclick="showPage('tracker')" id="nav-tracker">
-          ⏳ অর্ডার ট্র্যাকার
-          <span class="pending-badge" id="pending-badge" style="display: none"
-            >0</span
-          >
-        </a>
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar">
+  <a class="nav-logo" href="#" onclick="showPage('home')">
+    <div class="logo-icon">KD</div>
+    <div class="logo-text">
+      <span class="ln1">Khalid's Dreams</span>
+      <span class="ln2">Sales Management</span>
+    </div>
+  </a>
+
+  <!-- Desktop links -->
+  <div class="nav-links" id="nav-links">
+    <a href="#" class="active" onclick="showPage('home')"     id="nav-home">🏠 হোম</a>
+    <a href="#"               onclick="showPage('history')"   id="nav-history">📊 বিক্রয় ইতিহাস</a>
+    <a href="#"               onclick="showPage('products')"  id="nav-products">📦 পণ্য তালিকা</a>
+    <a href="#"               onclick="showPage('customers')" id="nav-customers">👥 গ্রাহক তালিকা</a>
+    <a href="#"               onclick="showPage('tracker')"   id="nav-tracker">
+      ⏳ অর্ডার ট্র্যাকার
+      <span class="pending-badge" id="pending-badge" style="display:none">0</span>
+    </a>
+  </div>
+
+  <div class="nav-right">
+    <span id="nav-datetime"></span>
+    <div class="nav-badge">⭐ Premium</div>
+    <button class="nav-hamburger" onclick="openMobileMenu()">☰</button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="nav-menu" id="nav-menu" onclick="closeMobileMenuOutside(event)">
+  <div class="nav-menu-inner">
+    <button class="nav-close-btn" onclick="closeMobileMenu()">✕</button>
+    <a href="#" onclick="showPage('home');closeMobileMenu()"><span class="nav-icon">🏠</span> হোম</a>
+    <a href="#" onclick="showPage('history');closeMobileMenu()"><span class="nav-icon">📊</span> বিক্রয় ইতিহাস</a>
+    <a href="#" onclick="showPage('products');closeMobileMenu()"><span class="nav-icon">📦</span> পণ্য তালিকা</a>
+    <a href="#" onclick="showPage('customers');closeMobileMenu()"><span class="nav-icon">👥</span> গ্রাহক তালিকা</a>
+    <a href="#" onclick="showPage('tracker');closeMobileMenu()">
+      <span class="nav-icon">⏳</span> অর্ডার ট্র্যাকার
+      <span class="pending-badge" id="pending-badge-mob" style="display:none">0</span>
+    </a>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     PAGE: HOME
+══════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <div class="total-banner">
+    <div class="banner-top">
+      <div class="total-label">
+        <div class="tl-main">আজকের মোট বিক্রয়</div>
+        <div class="tl-sub">প্রতিদিন মধ্যরাতে রিসেট হয়</div>
       </div>
-
-      <div class="nav-right">
-        <span
-          id="nav-datetime"
-          style="font-size: 0.75rem; color: var(--white-dim)"
-        ></span>
-        <div class="nav-badge">⭐ Premium</div>
-        <!-- Mobile hamburger -->
-        <button
-          class="nav-hamburger"
-          onclick="openMobileMenu()"
-          aria-label="Menu"
-        >
-          ☰
-        </button>
-      </div>
-    </nav>
-
-    <!-- Mobile Menu -->
-    <div class="nav-menu" id="nav-menu" onclick="closeMobileMenu(event)">
-      <div class="nav-menu-inner">
-        <button class="nav-close-btn" onclick="closeMobileMenu()">✕</button>
-        <a
-          href="#"
-          onclick="
-            showPage('home');
-            closeMobileMenu();
-          "
-        >
-          <span class="nav-icon">🏠</span> হোম
-        </a>
-        <a
-          href="#"
-          onclick="
-            showPage('products');
-            closeMobileMenu();
-          "
-        >
-          <span class="nav-icon">📦</span> পণ্য তালিকা
-        </a>
-        <a
-          href="#"
-          onclick="
-            showPage('tracker');
-            closeMobileMenu();
-          "
-        >
-          <span class="nav-icon">⏳</span> অর্ডার ট্র্যাকার
-          <span
-            class="pending-badge"
-            id="pending-badge-mob"
-            style="display: none"
-            >0</span
-          >
-        </a>
+      <div class="total-amount-value" id="daily-total-value">
+        <span class="currency-sign">৳</span>0.00
       </div>
     </div>
-
-    <!-- ══ TOTAL BANNER ══ -->
-    <div class="total-banner">
-      <div class="banner-top">
-        <div class="total-label">
-          <div class="tl-main">আজকের মোট আয়</div>
-          <div class="tl-sub">প্রতি মধ্যরাতে রিসেট হয়</div>
-        </div>
-        <div class="total-amount-value" id="daily-total-value">
-          <span class="currency-sign">৳</span>0.00
-        </div>
+    <div class="banner-stats">
+      <div class="stat-item">
+        <span class="num" id="daily-sales-count">0</span>
+        <span class="lbl">আজকের সেল</span>
       </div>
-      <div class="banner-stats">
-        <div class="stat-item">
-          <span class="num" id="daily-sales-count">0</span>
-          <span class="lbl">সেল আজকে</span>
-        </div>
-        <div class="stat-item">
-          <span class="num">🟢</span>
-          <span class="lbl">চালু আছে</span>
-        </div>
+      <div class="stat-item">
+        <span class="num">📦</span>
+        <span class="lbl">সক্রিয়</span>
       </div>
     </div>
+  </div>
 
-    <!-- ══ MAIN FORM ══ -->
-    <div class="main-container">
-      <!-- 1. Customer Info -->
-      <div class="section-card">
-        <div class="section-title">
-          <div class="icon">👤</div>
-          গ্রাহকের তথ্য
-        </div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="cust-name">গ্রাহকের নাম *</label>
-            <input
-              type="text"
-              id="cust-name"
-              placeholder="পুরো নাম লিখুন..."
-              autocomplete="name"
-            />
-          </div>
-          <div class="form-group">
-            <label for="cust-phone">ফোন নম্বর *</label>
-            <input
-              type="tel"
-              id="cust-phone"
-              placeholder="01XXXXXXXXX"
-              autocomplete="tel"
-              inputmode="numeric"
-            />
-          </div>
-          <div class="form-group">
-            <label for="district">জেলা *</label>
-            <select id="district" onchange="onDistrictChange()">
-              <option value="">-- জেলা সিলেক্ট করুন --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="thana">থানা / উপজেলা</label>
-            <select id="thana">
-              <option value="">-- থানা সিলেক্ট করুন --</option>
-            </select>
-          </div>
-          <div class="form-group full">
-            <label for="address">পূর্ণ ঠিকানা</label>
-            <input
-              type="text"
-              id="address"
-              placeholder="বাড়ি নং, রাস্তা, এলাকা..."
-              autocomplete="street-address"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. Order Review -->
-      <div class="section-card">
-        <div class="section-title">
-          <div class="icon">📦</div>
-          অর্ডার বিবরণ
-        </div>
-
-        <!-- Column Headers -->
-        <div class="order-header">
-          <span></span>
-          <span>পণ্যের নাম</span>
-          <span>মূল্য (৳)</span>
-          <span></span>
-        </div>
-
-        <div id="order-items-container"></div>
-
-        <button class="add-item-btn" onclick="addOrderItem()">
-          ➕ আরেকটি পণ্য যোগ করুন
-        </button>
-
-        <div class="order-total-row">
-          <span class="label">অর্ডার সাবটোটাল</span>
-          <span class="value" id="order-subtotal">৳ 0.00</span>
-        </div>
-      </div>
-
-      <!-- 3. Date & Time -->
-      <div class="section-card">
-        <div class="section-title">
-          <div class="icon">🕐</div>
-          তারিখ ও সময়
+  <div class="main-container">
+    <div class="section-card">
+      <div class="section-title"><div class="icon">👤</div>গ্রাহকের তথ্য</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="cust-name">গ্রাহকের নাম *</label>
+          <input type="text" id="cust-name" placeholder="পূর্ণ নাম লিখুন..." autocomplete="name" />
         </div>
         <div class="form-group">
-          <label>বিক্রয়ের সময়</label>
-          <div class="datetime-field">
-            <div class="datetime-display" id="datetime-display">
-              "এখনই সেট করুন" বাটনে ক্লিক করুন
-            </div>
-            <button class="datetime-btn" onclick="setDateTime()">
-              ⚡ এখনই সেট
-            </button>
-            <input type="hidden" id="datetime-value" />
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Note -->
-      <div class="section-card">
-        <div class="section-title">
-          <div class="icon">📝</div>
-          বিশেষ নোট (ঐচ্ছিক)
+          <label for="cust-phone">ফোন নম্বর *</label>
+          <input type="tel" id="cust-phone" placeholder="01XXXXXXXXX" inputmode="numeric" />
         </div>
         <div class="form-group">
-          <textarea
-            id="note"
-            rows="3"
-            placeholder="অর্ডার সম্পর্কে কোনো বিশেষ নির্দেশনা বা নোট..."
-          ></textarea>
+          <label for="district">জেলা *</label>
+          <select id="district" onchange="onDistrictChange()">
+            <option value="">-- জেলা সিলেক্ট করুন --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="thana">থানা / উপজেলা</label>
+          <select id="thana">
+            <option value="">-- থানা সিলেক্ট করুন --</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label for="address">পূর্ণ ঠিকানা</label>
+          <input type="text" id="address" placeholder="বাড়ি নং, রাস্তা, এলাকা..." />
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title"><div class="icon">📦</div>অর্ডার বিবরণ</div>
+      <div style="display:grid;grid-template-columns:28px 1fr 110px 36px;gap:7px;margin-bottom:6px;padding:0 2px;">
+        <div></div>
+        <div style="font-size:.65rem;color:var(--white-dim);letter-spacing:.07em;text-transform:uppercase;">পণ্যের নাম</div>
+        <div style="font-size:.65rem;color:var(--white-dim);letter-spacing:.07em;text-transform:uppercase;">মূল্য (৳)</div>
+        <div></div>
+      </div>
+      <div id="order-items-container"></div>
+      <button class="add-item-btn" onclick="addOrderItem()">➕ আরেকটি পণ্য যোগ করুন</button>
+      <div class="order-total-row">
+        <span class="label">অর্ডার সাবটোটাল</span>
+        <span class="value" id="order-subtotal">৳ 0.00</span>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title"><div class="icon">🕐</div>তারিখ ও সময়</div>
+      <div class="form-group">
+        <label>সেলের তারিখ ও সময়</label>
+        <div class="datetime-field">
+          <div class="datetime-display" id="datetime-display">"এখনই সেট করুন" বাটনে ক্লিক করুন</div>
+          <button class="datetime-btn" onclick="setDateTime()">⚡ এখনই সেট করুন</button>
+          <input type="hidden" id="datetime-value" />
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title"><div class="icon">📝</div>অতিরিক্ত নোট (ঐচ্ছিক)</div>
+      <div class="form-group">
+        <textarea id="note" rows="3" placeholder="অর্ডার সম্পর্কে কোনো বিশেষ নির্দেশনা..."></textarea>
+      </div>
+    </div>
+
+    <div class="submit-section">
+      <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">
+        🧾 সেল সম্পন্ন করুন ও PDF ডাউনলোড
+      </button>
+      <p class="submit-note">PDF ডাউনলোড হবে এবং Google Sheets-এ সেভ হবে</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     PAGE: SALES HISTORY
+══════════════════════════════════ -->
+<div class="page" id="page-history">
+  <div class="page-header">
+    <h1>📊 বিক্রয় ইতিহাস</h1>
+    <p>বিগত বিক্রয়ের তথ্য, চার্ট ও বিশ্লেষণ</p>
+  </div>
+  <div class="history-page-inner">
+
+    <!-- Loading -->
+    <div class="loading-state" id="history-loading" style="display:none">
+      <div class="spinner"></div>
+      <p>Google Sheets থেকে তথ্য লোড হচ্ছে...</p>
+    </div>
+
+    <!-- Content -->
+    <div id="history-content">
+
+      <!-- Summary -->
+      <div class="history-summary">
+        <div class="h-stat">
+          <span class="h-num" id="h-total">৳0</span>
+          <span class="h-lbl">মোট বিক্রয়</span>
+        </div>
+        <div class="h-stat">
+          <span class="h-num" id="h-count">0</span>
+          <span class="h-lbl">মোট অর্ডার</span>
+        </div>
+        <div class="h-stat">
+          <span class="h-num" id="h-avg">৳0</span>
+          <span class="h-lbl">গড় অর্ডার</span>
+        </div>
+        <div class="h-stat">
+          <span class="h-num" id="h-top" style="font-size:1rem;">—</span>
+          <span class="h-lbl">সেরা পণ্য</span>
         </div>
       </div>
 
-      <!-- Submit -->
-      <div class="submit-section">
-        <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">
-          🧾 সেল সম্পন্ন করুন ও PDF ডাউনলোড
+      <!-- Range Filter -->
+      <div class="range-filter">
+        <button class="h-range-btn" data-range="7"   onclick="setHistoryRange('7')">৭ দিন</button>
+        <button class="h-range-btn active" data-range="30" onclick="setHistoryRange('30')">৩০ দিন</button>
+        <button class="h-range-btn" data-range="90"  onclick="setHistoryRange('90')">৯০ দিন</button>
+        <button class="h-range-btn" data-range="all" onclick="setHistoryRange('all')">সব সময়</button>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-card">
+        <div class="chart-title">📈 দৈনিক বিক্রয় চার্ট</div>
+        <div id="sales-chart"><div class="chart-empty">লোড হচ্ছে...</div></div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <div class="table-toolbar">
+          <input type="text" id="h-search" placeholder="🔍 নাম, ফোন বা Invoice খুঁজুন..."
+            oninput="searchHistory()" />
+          <button class="export-btn" onclick="exportCSV()">📥 CSV Export</button>
+          <button class="refresh-btn" onclick="refreshHistory()">🔄</button>
+        </div>
+        <div class="result-count" id="h-result-count"></div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Invoice</th>
+                <th>গ্রাহক</th>
+                <th>পণ্য</th>
+                <th>মোট</th>
+                <th>জেলা</th>
+                <th>তারিখ</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--white-dim);">লোড হচ্ছে...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /history-content -->
+  </div>
+</div><!-- /page-history -->
+
+
+<!-- ══════════════════════════════════
+     PAGE: PRODUCTS
+══════════════════════════════════ -->
+<div class="page" id="page-products">
+  <div class="page-header">
+    <h1>📦 পণ্য তালিকা</h1>
+    <p>পণ্য যোগ করুন, এডিট করুন এবং স্টক ট্র্যাক করুন</p>
+  </div>
+  <div class="product-page-inner">
+    <div class="stock-summary">
+      <div class="stock-stat total"><span class="s-num" id="p-total">0</span><span class="s-lbl">মোট পণ্য</span></div>
+      <div class="stock-stat low-s"><span class="s-num" id="p-low">0</span><span class="s-lbl">কম স্টক</span></div>
+      <div class="stock-stat out-s"><span class="s-num" id="p-out">0</span><span class="s-lbl">স্টক নেই</span></div>
+    </div>
+    <div class="add-product-card">
+      <div class="section-title" style="margin-bottom:1rem;"><div class="icon">➕</div>নতুন পণ্য যোগ করুন</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>পণ্যের নাম *</label>
+          <input type="text" id="p-name" placeholder="যেমন: মধু ৫০০গ্রাম..." />
+        </div>
+        <div class="form-group">
+          <label>মূল্য (৳) *</label>
+          <input type="number" id="p-price" placeholder="মূল্য লিখুন..." min="0" inputmode="numeric" />
+        </div>
+        <div class="form-group">
+          <label>স্টক পরিমাণ</label>
+          <input type="number" id="p-stock" placeholder="কতটা আছে?" min="0" inputmode="numeric" />
+        </div>
+        <div class="form-group">
+          <label>ক্যাটাগরি</label>
+          <select id="p-category">
+            <option value="মধু">🍯 মধু</option>
+            <option value="ঘি">🧈 ঘি</option>
+            <option value="তেল">🫙 তেল</option>
+            <option value="চাল">🌾 চাল</option>
+            <option value="ডাল">🫘 ডাল</option>
+            <option value="মসলা">🌶️ মসলা</option>
+            <option value="অন্যান্য" selected>📦 অন্যান্য</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:.75rem;text-align:right;">
+        <button class="submit-btn" onclick="addProduct()" style="width:auto;padding:11px 28px;font-size:.9rem;">
+          ➕ পণ্য যোগ করুন
         </button>
-        <p class="submit-note">PDF ডাউনলোড হবে + Google Sheets-এ সেভ হবে</p>
       </div>
     </div>
-    <!-- /main-container -->
+    <div class="cat-filter" id="cat-filter"></div>
+    <div class="product-grid" id="product-grid"></div>
+  </div>
+</div>
 
-    <!-- ══ FOOTER ══ -->
-    <footer>
-      <div class="footer-inner">
-        <div class="footer-top">
-          <div class="footer-brand">
-            <div
-              style="
-                display: flex;
-                align-items: center;
-                gap: 9px;
-                margin-bottom: 6px;
-              "
-            >
-              <div
-                class="logo-icon"
-                style="width: 34px; height: 34px; font-size: 0.95rem"
-              >
-                KD
-              </div>
-              <span
-                style="
-                  font-family: &quot;Playfair Display&quot;, serif;
-                  color: var(--gold);
-                  font-size: 0.95rem;
-                  font-weight: 700;
-                "
-              >
-                Khalid's Dreams
-              </span>
-            </div>
-            <p>
-              প্রিমিয়াম বিক্রয় ব্যবস্থাপনা সিস্টেম। দ্রুত, নির্ভরযোগ্য ও
-              পেশাদার।
-            </p>
-          </div>
-          <div class="footer-col">
-            <h4>দ্রুত লিংক</h4>
-            <a href="#">🏠 হোম</a>
-            <a href="#">📊 বিক্রয় ইতিহাস</a>
-            <a href="#">📦 পণ্য তালিকা</a>
-            <a href="#">👥 গ্রাহক তালিকা</a>
-          </div>
-          <div class="footer-col">
-            <h4>যোগাযোগ</h4>
-            <a href="tel:+8801XXXXXXXXX">📞 কল করুন</a>
-            <a href="mailto:khalidsdreams@gmail.com">✉️ ইমেইল</a>
-            <a
-              href="https://www.linkedin.com/in/lavib-uddin-ashik"
-              target="_blank"
-              rel="noopener"
-            >
-              💼 LinkedIn
-            </a>
-            <a href="#">📍 আমাদের অবস্থান</a>
-          </div>
-        </div>
-        <div class="footer-bottom">
-          <p>© 2026 Khalid's Dreams. সর্বস্বত্ব সংরক্ষিত।</p>
-          <div class="dev-credit">
-            ⚡ Developed by
-            <a
-              href="https://www.linkedin.com/in/lavib-uddin-ashik"
-              target="_blank"
-              rel="noopener"
-            >
-              Md. Lavib Uddin Ashik
-            </a>
-          </div>
-        </div>
-      </div>
-    </footer>
+<!-- ══════════════════════════════════
+     PAGE: CUSTOMERS
+══════════════════════════════════ -->
+<div class="page" id="page-customers">
+  <div class="page-header">
+    <h1>👥 গ্রাহক তালিকা</h1>
+    <p>সকল গ্রাহকের তথ্য, অর্ডার ইতিহাস ও বিশ্লেষণ</p>
+  </div>
+  <div class="customer-page-inner">
 
-    <!-- Toast Notification -->
-    <div class="toast" id="toast">
-      <div class="toast-icon"></div>
-      <div class="toast-text"></div>
+    <!-- Loading -->
+    <div class="loading-state" id="customer-loading" style="display:none">
+      <div class="spinner"></div>
+      <p>গ্রাহকের তথ্য লোড হচ্ছে...</p>
     </div>
 
-    <script src="js/app.js"></script>
-    <script src="js/products.js"></script>
-    <script src="js/tracker.js"></script>
+    <div id="customer-content">
+      <!-- Summary -->
+      <div class="customer-summary">
+        <div class="c-stat"><span class="c-num" id="c-total">0</span><span class="c-lbl">মোট গ্রাহক</span></div>
+        <div class="c-stat"><span class="c-num" id="c-repeat">0</span><span class="c-lbl">নিয়মিত গ্রাহক</span></div>
+        <div class="c-stat"><span class="c-num" id="c-top" style="font-size:.9rem;">—</span><span class="c-lbl">সেরা গ্রাহক</span></div>
+      </div>
 
-    <script>
-      // ── PAGE NAVIGATION ──
-      function showPage(page) {
-        document
-          .querySelectorAll(".page")
-          .forEach((p) => p.classList.remove("active"));
-        document
-          .querySelectorAll(".nav-links a")
-          .forEach((a) => a.classList.remove("active"));
-        document.getElementById("page-" + page).classList.add("active");
-        const navEl = document.getElementById("nav-" + page);
-        if (navEl) navEl.classList.add("active");
-        window.scrollTo(0, 0);
-        if (page === "products") initProducts();
-        if (page === "tracker") initTracker();
-      }
+      <!-- Toolbar -->
+      <div class="cust-toolbar">
+        <input type="text" id="c-search" placeholder="🔍 নাম, ফোন বা জেলা দিয়ে খুঁজুন..."
+          oninput="searchCustomers()" />
+        <button class="refresh-btn" onclick="refreshCustomers()">🔄 Refresh</button>
+      </div>
 
-      // ── MOBILE MENU ──
-      function openMobileMenu() {
-        document.getElementById("nav-menu").classList.add("open");
-        document.body.style.overflow = "hidden";
-      }
-      function closeMobileMenu(e) {
-        if (e && e.target !== document.getElementById("nav-menu")) return;
-        document.getElementById("nav-menu").classList.remove("open");
-        document.body.style.overflow = "";
-      }
-    </script>
-  </body>
+      <!-- Sort -->
+      <div style="display:flex;gap:.45rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <button class="c-sort-btn active" data-sort="total"  onclick="setCustomerSort('total')">💰 সর্বোচ্চ কেনাকাটা</button>
+        <button class="c-sort-btn"        data-sort="count"  onclick="setCustomerSort('count')">🔄 বেশি অর্ডার</button>
+        <button class="c-sort-btn"        data-sort="recent" onclick="setCustomerSort('recent')">🕐 সাম্প্রতিক</button>
+        <button class="c-sort-btn"        data-sort="name"   onclick="setCustomerSort('name')">🔤 নাম অনুযায়ী</button>
+      </div>
+
+      <div class="result-count" id="c-result-count"></div>
+      <div class="customer-grid" id="customer-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     PAGE: ORDER TRACKER
+══════════════════════════════════ -->
+<div class="page" id="page-tracker">
+  <div class="page-header">
+    <h1>⏳ অর্ডার ট্র্যাকার</h1>
+    <p>পেন্ডিং অর্ডার ম্যানেজ করুন এবং সম্পন্ন করুন</p>
+  </div>
+  <div class="tracker-page-inner">
+    <div class="tracker-stats">
+      <div class="t-stat pending-s"><span class="t-num" id="t-pending-count">0</span><span class="t-lbl">পেন্ডিং</span></div>
+      <div class="t-stat done-s"><span class="t-num" id="t-done-count">0</span><span class="t-lbl">সম্পন্ন</span></div>
+      <div class="t-stat value-s"><span class="t-num" id="t-pending-value">৳0</span><span class="t-lbl">পেন্ডিং মূল্য</span></div>
+    </div>
+
+    <div class="tracker-add-card">
+      <div class="section-title" style="margin-bottom:1rem;">
+        <div class="icon" style="background:rgba(255,183,77,.1);">📋</div>
+        নতুন পেন্ডিং অর্ডার যোগ করুন
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>গ্রাহকের নাম *</label>
+          <input type="text" id="t-cust-name" placeholder="নাম লিখুন..." />
+        </div>
+        <div class="form-group">
+          <label>ফোন নম্বর *</label>
+          <input type="tel" id="t-cust-phone" placeholder="01XXXXXXXXX" inputmode="numeric" />
+        </div>
+        <div class="form-group full">
+          <label>ঠিকানা</label>
+          <input type="text" id="t-address" placeholder="ঠিকানা লিখুন..." />
+        </div>
+      </div>
+      <div style="margin:.85rem 0 .4rem;">
+        <label style="font-size:.7rem;color:var(--white-dim);letter-spacing:.07em;text-transform:uppercase;">পণ্য তালিকা *</label>
+      </div>
+      <div id="tracker-items-container" class="tracker-items-container"></div>
+      <button class="add-item-btn" onclick="addTrackerItem()" style="margin-bottom:.75rem;">
+        ➕ আরেকটি পণ্য যোগ করুন
+      </button>
+      <div class="order-total-row" style="margin-bottom:.75rem;">
+        <span class="label">সাবটোটাল</span>
+        <span class="value" id="tracker-subtotal">৳ 0.00</span>
+      </div>
+      <div class="form-group" style="margin-bottom:.75rem;">
+        <label>নোট (ঐচ্ছিক)</label>
+        <input type="text" id="t-note" placeholder="বিশেষ নির্দেশনা..." />
+      </div>
+      <button class="submit-btn" onclick="addPendingOrder()"
+        style="background:linear-gradient(135deg,#ffb74d,#f57c00);color:#1a1000;">
+        📋 পেন্ডিং অর্ডার সেভ করুন
+      </button>
+    </div>
+
+    <div style="margin-bottom:.75rem;">
+      <div class="section-title" style="border-bottom:1px solid var(--border);padding-bottom:.75rem;">
+        <div class="icon">📃</div>অর্ডার লিস্ট
+      </div>
+    </div>
+    <div class="pending-list" id="pending-list"></div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div class="logo-icon" style="width:34px;height:34px;font-size:.95rem;">KD</div>
+          <span style="font-family:'Playfair Display',serif;color:var(--gold);font-size:.95rem;font-weight:700;">Khalid's Dreams</span>
+        </div>
+        <p>প্রিমিয়াম সেলস ম্যানেজমেন্ট সিস্টেম।</p>
+      </div>
+      <div class="footer-col">
+        <h4>নেভিগেশন</h4>
+        <a href="#" onclick="showPage('home')">🏠 হোম</a>
+        <a href="#" onclick="showPage('history')">📊 বিক্রয় ইতিহাস</a>
+        <a href="#" onclick="showPage('products')">📦 পণ্য তালিকা</a>
+        <a href="#" onclick="showPage('customers')">👥 গ্রাহক তালিকা</a>
+        <a href="#" onclick="showPage('tracker')">⏳ অর্ডার ট্র্যাকার</a>
+      </div>
+      <div class="footer-col">
+        <h4>যোগাযোগ</h4>
+        <a href="tel:+8801710979757">📞 01710979757</a>
+        <a href="tel:+8801710721807">📞 01710721807</a>
+        <a href="mailto:khalidsdreams@email.com">✉️ ইমেইল</a>
+        <a href="https://www.linkedin.com/in/lavib-uddin-ashik" target="_blank">💼 LinkedIn</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Khalid's Dreams. সর্বস্বত্ব সংরক্ষিত।</p>
+      <div class="dev-credit">
+        ⚡ Developed by
+        <a href="https://www.linkedin.com/in/lavib-uddin-ashik" target="_blank">Md. Lavib Uddin Ashik</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-icon"></div>
+  <div class="toast-text"></div>
+</div>
+
+<!-- Product Edit Modal -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal-box">
+    <h3>✏️ পণ্য এডিট করুন</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>পণ্যের নাম</label><input type="text" id="edit-p-name" /></div>
+      <div class="form-group"><label>মূল্য (৳)</label><input type="number" id="edit-p-price" min="0" inputmode="numeric" /></div>
+      <div class="form-group"><label>স্টক</label><input type="number" id="edit-p-stock" min="0" inputmode="numeric" /></div>
+      <div class="form-group">
+        <label>ক্যাটাগরি</label>
+        <select id="edit-p-category">
+          <option value="মধু">🍯 মধু</option>
+          <option value="ঘি">🧈 ঘি</option>
+          <option value="তেল">🫙 তেল</option>
+          <option value="চাল">🌾 চাল</option>
+          <option value="ডাল">🫘 ডাল</option>
+          <option value="মসলা">🌶️ মসলা</option>
+          <option value="অন্যান্য">📦 অন্যান্য</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeEditModal()">বাতিল</button>
+      <button class="modal-btn save" onclick="saveEditProduct()">💾 সেভ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- Customer Detail Modal -->
+<div class="modal-overlay" id="customer-detail-modal">
+  <div class="modal-box" style="max-width:500px;max-height:90vh;overflow-y:auto;">
+    <div class="cd-header">
+      <div class="cd-avatar" id="cd-avatar">?</div>
+      <div class="cd-info">
+        <div class="cd-name-big" id="cd-name">—</div>
+        <div class="cd-phone-big" id="cd-phone">—</div>
+        <div style="font-size:.72rem;color:var(--white-dim);margin-top:2px;" id="cd-location">—</div>
+      </div>
+    </div>
+    <div class="cd-stats">
+      <div class="cd-stat"><span class="cdn" id="cd-total">৳0</span><span class="cdl">মোট কেনাকাটা</span></div>
+      <div class="cd-stat"><span class="cdn" id="cd-count">0</span><span class="cdl">মোট অর্ডার</span></div>
+      <div class="cd-stat"><span class="cdn" id="cd-avg">৳0</span><span class="cdl">গড় অর্ডার</span></div>
+    </div>
+    <div class="cd-orders-title">📋 অর্ডার ইতিহাস</div>
+    <div class="cd-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>পণ্য</th>
+            <th>মোট</th>
+            <th>তারিখ</th>
+          </tr>
+        </thead>
+        <tbody id="cd-orders"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:1rem;">
+      <button class="modal-btn cancel" onclick="closeCustomerDetail()" style="width:100%;">বন্ধ করুন</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/products.js"></script>
+<script src="js/tracker.js"></script>
+<script src="js/history.js"></script>
+<script src="js/customers.js"></script>
+
+<script>
+// ── PAGE NAVIGATION ──
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const navEl = document.getElementById('nav-' + page);
+  if (navEl) navEl.classList.add('active');
+  window.scrollTo(0,0);
+  if (page === 'products')  initProducts();
+  if (page === 'tracker')   initTracker();
+  if (page === 'history')   initHistory();
+  if (page === 'customers') initCustomers();
+}
+
+// ── MOBILE MENU ──
+function openMobileMenu() {
+  document.getElementById('nav-menu').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeMobileMenu() {
+  document.getElementById('nav-menu').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeMobileMenuOutside(e) {
+  if (e.target === document.getElementById('nav-menu')) closeMobileMenu();
+}
+
+// ── SYNC pending badge both desktop & mobile ──
+const _origUpdateBadge = window.updatePendingBadge;
+function updatePendingBadge() {
+  const count = (JSON.parse(localStorage.getItem('kd_pending')||'[]'))
+    .filter(o=>o.status==='pending').length;
+  ['pending-badge','pending-badge-mob'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = count; el.style.display = count > 0 ? 'inline':'none'; }
+  });
+}
+
+// init badges on load
+document.addEventListener('DOMContentLoaded', updatePendingBadge);
+</script>
+</body>
 </html>
