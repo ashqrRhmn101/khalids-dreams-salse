@@ -25,7 +25,7 @@ const SHEET_URL = 'তোমার_URL_এখানে';
 ```
 
 ### ✅ Already configured URL:
-https://script.google.com/macros/s/AKfycbyVkNaPQT-fPuvSeEofs4iTEqZWmmThzkx9r8Hmm2OyWyOsh7eNbSBJetc8lHPTwByuxQ/exec
+
 
 ### ⚠️ Important: Re-deploy করতে হবে!
 নতুন code (v3) paste করার পর:
