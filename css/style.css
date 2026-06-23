@@ -90,7 +90,7 @@ body::before {
   background:linear-gradient(135deg,#191200,#1a1600,#120f00);
   border:1px solid var(--border);
   border-left:4px solid var(--gold);
-  margin:1rem;
+  margin:1rem 1rem;
   border-radius:var(--radius);
   padding:1.1rem 1.25rem;
   box-shadow:var(--shadow-gold);
