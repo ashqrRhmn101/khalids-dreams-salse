@@ -1,4 +1,4 @@
-# Google Sheets Setup — Khalid's Dreams (Final)
+# Google Sheets Setup — Khalid's Dreams v6
 
 ## Sheet Headers (Row 1)
 | A | B | C | D | E | F | G | H | I | J | K |
@@ -15,6 +15,16 @@
 2. ✏️ Edit → New Version → Deploy
 3. URL একই থাকবে ✅
 
-## নতুন কী হলো?
-- `?action=fetch` — বিক্রয় ইতিহাস ও গ্রাহক তালিকা লোড করে
-- `?invoiceNo=...` — নতুন sale সেভ করে (আগের মতই)
+## নতুন কী হলো? (v6)
+- ✅ **Phone Auto-fill**: ফোন নম্বর দিলে repeat customer-এর নাম/ঠিকানা auto-fill হবে
+- ✅ **Phone Normalize**: এখন থেকে সব ফোন নম্বরের আগে স্বয়ংক্রিয়ভাবে `0` যুক্ত হবে
+  (যেমন 1710979757 → 01710979757)
+- ✅ **PDF সাদা ব্যাকগ্রাউন্ড + কালো টেক্সট + লোগো**
+- ✅ **PDF ফাইল সাইজ ছোট** কিন্তু টেক্সট sharp (JPEG compression)
+
+## পুরনো ডেটা ঠিক করতে (একবার মাত্র করুন)
+আপনার পুরনো Sheet-এর phone column-এ `0` ছাড়া নম্বর থাকলে:
+1. Apps Script এডিটরে যান
+2. Function dropdown থেকে **fixExistingPhoneNumbers** সিলেক্ট করুন
+3. ▶️ Run বাটনে ক্লিক করুন
+4. এটা পুরনো সব ফোন নম্বরের আগে `0` যুক্ত করে দেবে

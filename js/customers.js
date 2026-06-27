@@ -11,12 +11,12 @@ let sortMode         = 'total'; // total | count | name | recent
 function buildCustomerList(sales) {
   const map = {};
   sales.forEach(s => {
-    const key = s.phone.trim();
+    const key = normalizePhone(s.phone);
     if (!key) return;
     if (!map[key]) {
       map[key] = {
         name:      s.name,
-        phone:     s.phone,
+        phone:     key, // store normalized form for display
         district:  s.district || '',
         thana:     s.thana || '',
         address:   s.address || '',

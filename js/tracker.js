@@ -80,7 +80,7 @@ function updateTrackerSubtotal() {
 // ── ADD PENDING ORDER ──
 function addPendingOrder() {
   const name    = document.getElementById('t-cust-name').value.trim();
-  const phone   = document.getElementById('t-cust-phone').value.trim();
+  const phone   = normalizePhone(document.getElementById('t-cust-phone').value);
   const address = document.getElementById('t-address').value.trim();
   const note    = document.getElementById('t-note').value.trim();
 
@@ -221,6 +221,7 @@ async function completeOrder(id) {
     renderTrackerStats();
     renderPendingList();
     showToast('success', 'সম্পন্ন!', 'PDF ডাউনলোড ও Google Sheets-এ সেভ হয়েছে।');
+    customerLookupCache = null; // refresh lookup cache
 
   } catch(e) {
     console.error(e);
@@ -263,4 +264,31 @@ function initTracker() {
   renderTrackerStats();
   renderPendingList();
   updatePendingBadge();
+
+  const phoneEl = document.getElementById('t-cust-phone');
+  if (phoneEl && !phoneEl._lookupBound) {
+    phoneEl._lookupBound = true;
+    let debounceTimer;
+    phoneEl.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => onTrackerPhoneLookup(phoneEl), 500);
+    });
+    phoneEl.addEventListener('blur', () => onTrackerPhoneLookup(phoneEl));
+  }
+}
+
+async function onTrackerPhoneLookup(inputEl) {
+  const phone = normalizePhone(inputEl.value);
+  if (phone.length < 11) return;
+  const map = await ensureCustomerLookup();
+  if (!map) return;
+  const match = map[phone];
+  if (!match) return;
+
+  const nameEl = document.getElementById('t-cust-name');
+  if (nameEl && !nameEl.value.trim()) nameEl.value = match.name || '';
+  const addrEl = document.getElementById('t-address');
+  if (addrEl && !addrEl.value.trim() && match.address) addrEl.value = match.address;
+
+  showToast('success', 'পরিচিত গ্রাহক! 👋', `${match.name}-এর তথ্য অটো-ফিল হয়েছে।`);
 }
