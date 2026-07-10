@@ -27,15 +27,20 @@ function doGet(e) {
         data.push({
           invoiceNo: r[0]  || '',
           name:      r[1]  || '',
-          phone:     normalizePhone_(r[2]), // always return normalized
+          phone:     normalizePhone_(r[2]),
           district:  r[3]  || '',
           thana:     r[4]  || '',
           address:   r[5]  || '',
           items:     r[6]  || '',
-          total:     parseFloat(r[7]) || 0,
-          datetime:  r[8]  || '',
-          note:      r[9]  || '',
-          timestamp: r[10] || '',
+          subtotal:  parseFloat(r[7])  || 0,
+          courier:   parseFloat(r[8])  || 0,
+          discount:  parseFloat(r[9])  || 0,
+          advance:   parseFloat(r[10]) || 0,
+          total:     parseFloat(r[11]) || 0,
+          due:       parseFloat(r[12]) || 0,
+          datetime:  r[13] || '',
+          note:      r[14] || '',
+          timestamp: r[15] || '',
         });
       }
 
@@ -59,17 +64,22 @@ function doGet(e) {
     const invNo  = p.invoiceNo || ('KD-' + Date.now().toString().slice(-6));
 
     sheet.appendRow([
-      invNo,
-      p.name      || '',
-      normalizePhone_(p.phone), // always store normalized
-      p.district  || '',
-      p.thana     || '',
-      p.address   || '',
-      p.items     || '',
-      parseFloat(p.total) || 0,
-      p.datetime  || '',
-      p.note      || '',
-      p.timestamp || '',
+      invNo,                             // A - Invoice No
+      p.name       || '',                // B - Customer Name
+      "'" + normalizePhone_(p.phone),   // C - Phone (force text)
+      p.district   || '',                // D - District
+      p.thana      || '',                // E - Thana
+      p.address    || '',                // F - Address
+      p.items      || '',                // G - Products
+      parseFloat(p.subtotal) || 0,      // H - Subtotal
+      parseFloat(p.courier)  || 0,      // I - Courier Charge
+      parseFloat(p.discount) || 0,      // J - Discount
+      parseFloat(p.advance)  || 0,      // K - Advance
+      parseFloat(p.total)    || 0,      // L - Grand Total
+      parseFloat(p.due)      || 0,      // M - Due
+      p.datetime   || '',                // N - Date & Time
+      p.note       || '',                // O - Note
+      p.timestamp  || '',                // P - Timestamp
     ]);
 
     const cb     = p.callback || 'callback';

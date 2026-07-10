@@ -119,17 +119,46 @@
 
     <div class="section-card">
       <div class="section-title"><div class="icon">📦</div>অর্ডার বিবরণ</div>
-      <div style="display:grid;grid-template-columns:28px 1fr 110px 36px;gap:7px;margin-bottom:6px;padding:0 2px;">
-        <div></div>
-        <div style="font-size:.65rem;color:var(--white-dim);letter-spacing:.07em;text-transform:uppercase;">পণ্যের নাম</div>
-        <div style="font-size:.65rem;color:var(--white-dim);letter-spacing:.07em;text-transform:uppercase;">মূল্য (৳)</div>
-        <div></div>
-      </div>
       <div id="order-items-container"></div>
       <button class="add-item-btn" onclick="addOrderItem()">➕ আরেকটি পণ্য যোগ করুন</button>
-      <div class="order-total-row">
-        <span class="label">অর্ডার সাবটোটাল</span>
+
+      <!-- Subtotal -->
+      <div class="order-total-row" style="margin-top:.85rem;">
+        <span class="label">পণ্যের মোট (Subtotal)</span>
         <span class="value" id="order-subtotal">৳ 0.00</span>
+      </div>
+
+      <!-- Extra fields -->
+      <div class="calc-fields">
+        <div class="calc-row">
+          <div class="form-group" style="margin:0;flex:1;">
+            <label>কুরিয়ার চার্জ (৳)</label>
+            <input type="number" id="courier" placeholder="0" min="0"
+              oninput="updateGrandTotal()" />
+          </div>
+          <div class="form-group" style="margin:0;flex:1;">
+            <label>ডিসকাউন্ট (৳)</label>
+            <input type="number" id="discount" placeholder="0" min="0"
+              oninput="updateGrandTotal()" />
+          </div>
+        </div>
+        <div class="calc-row">
+          <div class="form-group" style="margin:0;flex:1;">
+            <label>অগ্রিম (৳)</label>
+            <input type="number" id="advance" placeholder="0" min="0"
+              oninput="updateGrandTotal()" />
+          </div>
+          <div class="form-group" style="margin:0;flex:1;">
+            <label>বাকি (৳)</label>
+            <div class="calc-result-box" id="due-display">৳ 0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grand Total -->
+      <div class="order-total-row grand-total-row">
+        <span class="label" style="font-size:.9rem;font-weight:700;">সর্বমোট / Grand Total</span>
+        <span class="value grand-total-val" id="grand-total-display">৳ 0.00</span>
       </div>
     </div>
 
