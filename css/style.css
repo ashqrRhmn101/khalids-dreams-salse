@@ -426,3 +426,94 @@ footer{
   display:none;
 }
 @media(min-width:600px){.nav-date-text{display:block;}}
+
+/* ══ V7 — New Order Item Layout ══ */
+.item-row-v7 {
+  background: var(--dark-3);
+  border: 1px solid var(--dark-5);
+  border-radius: var(--radius-sm);
+  padding: .7rem .85rem;
+  margin-bottom: .6rem;
+  animation: slideIn .25s ease;
+}
+.item-row-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: .55rem;
+}
+.item-row-top input { flex: 1; }
+
+.item-row-bottom {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto auto;
+  gap: 8px;
+  align-items: end;
+}
+.item-multiply, .item-equals {
+  font-size: 1rem;
+  color: var(--gold);
+  font-weight: 700;
+  padding-bottom: 11px;
+  flex-shrink: 0;
+}
+.item-price-result {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.price-result-val {
+  padding: 11px 12px;
+  background: rgba(201,168,76,.08);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  color: var(--gold);
+  font-family: 'Playfair Display', serif;
+  font-size: .92rem;
+  white-space: nowrap;
+}
+
+/* ══ Calc Fields ══ */
+.calc-fields {
+  margin-top: .85rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+.calc-row {
+  display: flex;
+  gap: .7rem;
+}
+.calc-result-box {
+  padding: 11px 13px;
+  background: rgba(76,175,80,.08);
+  border: 1px solid rgba(76,175,80,.25);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  color: #81c784;
+  font-family: 'Playfair Display', serif;
+  font-size: .95rem;
+}
+
+/* Grand Total row */
+.grand-total-row {
+  background: rgba(201,168,76,.1);
+  border: 1.5px solid var(--gold);
+  margin-top: .75rem;
+}
+.grand-total-val {
+  font-size: 1.5rem !important;
+}
+
+/* ══ Responsive V7 ══ */
+@media(max-width:480px) {
+  .item-row-bottom {
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto auto;
+  }
+  .item-multiply { padding-bottom: 11px; }
+  .item-equals   { display: none; }
+  .item-price-result { grid-column: 1 / -1; }
+  .calc-row { flex-direction: column; }
+}
