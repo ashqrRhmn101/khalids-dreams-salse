@@ -36,7 +36,7 @@ function renderTrackerStats() {
 // ── TRACKER FORM ITEMS ──
 function addTrackerItem() {
   trackerCounter++;
-  trackerItems.push({ id: trackerCounter, name: '', price: 0 });
+  trackerItems.push({ id: trackerCounter, name: '', qty: 1, rate: 0, price: 0 });
   renderTrackerItems();
 }
 
@@ -50,7 +50,12 @@ function removeTrackerItem(id) {
 function updateTrackerItem(id, field, value) {
   const item = trackerItems.find(i => i.id === id);
   if (!item) return;
-  item[field] = field === 'price' ? (parseFloat(value) || 0) : value;
+  if (field === 'qty')  item.qty  = parseFloat(value) || 0;
+  else if (field === 'rate') item.rate = parseFloat(value) || 0;
+  else item[field] = value;
+  item.price = parseFloat((item.qty * item.rate).toFixed(2));
+  const el = document.getElementById(`tprice-${id}`);
+  if (el) el.textContent = '৳' + item.price.toLocaleString('en-US',{minimumFractionDigits:2});
   updateTrackerSubtotal();
 }
 
@@ -59,14 +64,34 @@ function renderTrackerItems() {
   c.innerHTML = '';
   trackerItems.forEach((item, idx) => {
     const row = document.createElement('div');
-    row.className = 't-item-row';
+    row.className = 'item-row-v7';
     row.innerHTML = `
-      <input type="text" placeholder="পণ্যের নাম..." value="${item.name}"
-        oninput="updateTrackerItem(${item.id},'name',this.value)" />
-      <input type="number" placeholder="৳ মূল্য" value="${item.price||''}" min="0"
-        oninput="updateTrackerItem(${item.id},'price',this.value)" />
-      <button class="remove-item-btn" onclick="removeTrackerItem(${item.id})"
-        style="width:32px;height:44px;font-size:.75rem;">✕</button>`;
+      <div class="item-row-top">
+        <input type="text" placeholder="পণ্যের নাম..." value="${item.name}"
+          oninput="updateTrackerItem(${item.id},'name',this.value)" style="flex:1;" />
+        <button class="remove-item-btn" onclick="removeTrackerItem(${item.id})"
+          style="width:34px;height:40px;font-size:.75rem;">✕</button>
+      </div>
+      <div class="item-row-bottom">
+        <div class="form-group" style="margin:0;">
+          <label style="font-size:.62rem;color:var(--white-dim);">পরিমাণ (কেজি)</label>
+          <input type="number" placeholder="1" value="${item.qty||''}" min="0" step="0.1"
+            oninput="updateTrackerItem(${item.id},'qty',this.value)" />
+        </div>
+        <div class="item-multiply">×</div>
+        <div class="form-group" style="margin:0;">
+          <label style="font-size:.62rem;color:var(--white-dim);">দর (৳/কেজি)</label>
+          <input type="number" placeholder="500" value="${item.rate||''}" min="0"
+            oninput="updateTrackerItem(${item.id},'rate',this.value)" />
+        </div>
+        <div class="item-equals">=</div>
+        <div class="item-price-result">
+          <label style="font-size:.62rem;color:var(--white-dim);">মোট</label>
+          <div class="price-result-val" id="tprice-${item.id}">
+            ৳${item.price.toLocaleString('en-US',{minimumFractionDigits:2})}
+          </div>
+        </div>
+      </div>`;
     c.appendChild(row);
   });
 }
