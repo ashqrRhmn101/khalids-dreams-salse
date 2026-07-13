@@ -993,3 +993,213 @@ table.data-table {
 @media(min-width: 900px) {
   .customer-grid { grid-template-columns: repeat(3,1fr); }
 }
+
+/* ══════════════════════════════
+   দেনা-পাওনা PAGE
+══════════════════════════════ */
+.dues-page-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1rem 1rem 5rem;
+}
+
+/* Summary */
+.dues-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .75rem;
+  margin-bottom: 1.1rem;
+}
+.dues-stat {
+  background: var(--dark-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .9rem 1rem;
+}
+.dues-stat .ds-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 2px;
+}
+.dues-stat .ds-lbl { font-size: .65rem; color: var(--white-dim); letter-spacing: .08em; text-transform: uppercase; }
+.dues-stat.sales-s  .ds-num { color: var(--gold); }
+.dues-stat.adv-s    .ds-num { color: #81c784; }
+.dues-stat.due-s    .ds-num { color: #e57373; }
+.dues-stat.avg-s    .ds-num { color: var(--gold-light); }
+
+/* Range filter */
+.dues-range-btn {
+  background: var(--dark-3);
+  border: 1px solid var(--dark-5);
+  color: var(--white-dim);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: .78rem;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'Hind Siliguri', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.dues-range-btn.active, .dues-range-btn:hover {
+  background: rgba(229,57,53,.15);
+  border-color: #e57373;
+  color: #e57373;
+}
+
+/* Chart */
+.dues-chart-card {
+  background: var(--dark-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.1rem;
+  overflow: hidden;
+}
+
+/* Due card list */
+.dues-list { display: flex; flex-direction: column; gap: .75rem; }
+
+.due-card {
+  background: var(--dark-2);
+  border: 1px solid var(--border);
+  border-left: 4px solid #e57373;
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.due-card:hover { border-color: #e57373; box-shadow: 0 4px 16px rgba(229,57,53,.12); }
+
+.due-card-top {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+}
+.due-avatar {
+  width: 44px; height: 44px; min-width: 44px;
+  background: linear-gradient(135deg, #e57373, #c0392b);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 700; color: #fff;
+}
+.due-info { flex: 1; min-width: 0; }
+.due-name { font-size: .95rem; font-weight: 700; color: var(--white); margin-bottom: 2px; }
+.due-meta { font-size: .72rem; color: var(--white-dim); margin-bottom: 2px; }
+.due-inv-count { font-size: .68rem; color: #e57373; }
+
+.due-amount-wrap { text-align: right; flex-shrink: 0; }
+.due-amount {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem; font-weight: 900; color: #e57373;
+}
+.due-amount-lbl { font-size: .62rem; color: var(--white-dim); }
+
+.due-card-actions {
+  display: flex;
+  gap: .5rem;
+  padding: .6rem 1rem;
+  background: rgba(229,57,53,.04);
+  border-top: 1px solid rgba(229,57,53,.15);
+}
+.due-pay-btn {
+  flex: 1;
+  padding: 9px 12px;
+  background: linear-gradient(135deg, #e57373, #c0392b);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: .85rem; font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.due-pay-btn:hover { filter: brightness(1.1); }
+
+.due-detail-btn {
+  padding: 9px 14px;
+  background: var(--dark-3);
+  color: var(--white-dim);
+  border: 1px solid var(--dark-5);
+  border-radius: var(--radius-sm);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: .85rem;
+  cursor: pointer;
+  transition: all .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.due-detail-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Payment modal */
+.pay-modal-info {
+  background: rgba(229,57,53,.08);
+  border: 1px solid rgba(229,57,53,.25);
+  border-radius: var(--radius-sm);
+  padding: .9rem 1rem;
+  font-size: .88rem;
+  color: #e57373;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+/* Due detail modal */
+.dd-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.dd-avatar {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, #e57373, #c0392b);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.dd-total-due {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; font-weight: 900; color: #e57373;
+}
+
+/* Toolbar */
+.dues-toolbar {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: .85rem;
+}
+.dues-toolbar input {
+  flex: 1;
+  min-width: 160px;
+}
+
+/* prev-due field in order */
+.prev-due-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .6rem .9rem;
+  background: rgba(229,57,53,.06);
+  border: 1px solid rgba(229,57,53,.2);
+  border-radius: var(--radius-sm);
+  margin-top: .5rem;
+}
+.prev-due-row label {
+  white-space: nowrap;
+  color: #e57373;
+  flex-shrink: 0;
+}
+.prev-due-row input {
+  flex: 1;
+  border-color: rgba(229,57,53,.3);
+}
+.prev-due-row input:focus { border-color: #e57373; }
+
+@media(min-width: 600px) {
+  .dues-summary { grid-template-columns: repeat(4, 1fr); }
+  .dues-page-inner { padding: 1.25rem 1.5rem 4rem; }
+}
