@@ -48,11 +48,18 @@ async function ensureCustomerLookup() {
     const key = normalizePhone(s.phone);
     if (!key) return;
     const ts = s.timestamp ? new Date(s.timestamp).getTime() : 0;
-    if (!map[key] || ts > map[key]._ts) {
-      map[key] = {
-        name: s.name, district: s.district, thana: s.thana,
-        address: s.address, _ts: ts,
-      };
+    if (!map[key]) {
+      map[key] = { name:'', district:'', thana:'', address:'', _ts:0, previousDue:0 };
+    }
+    // accumulate due from all invoices of this phone
+    map[key].previousDue += parseFloat(s.due) || 0;
+    // keep latest customer info
+    if (ts > map[key]._ts) {
+      map[key]._ts      = ts;
+      map[key].name     = s.name     || map[key].name;
+      map[key].district = s.district || map[key].district;
+      map[key].thana    = s.thana    || map[key].thana;
+      map[key].address  = s.address  || map[key].address;
     }
   });
 
@@ -71,17 +78,18 @@ async function fetchSalesDataSafe() {
 
 async function onPhoneInputLookup(inputEl) {
   const phone = normalizePhone(inputEl.value);
-  if (phone.length < 11) return; // wait until full number typed
+  if (phone.length < 11) return;
 
   const map = await ensureCustomerLookup();
   if (!map) return;
   const match = map[phone];
   if (!match) return;
 
-  // Only fill if name field currently empty (don't overwrite manual edits)
+  // Fill name
   const nameEl = document.getElementById('cust-name');
   if (nameEl && !nameEl.value.trim()) nameEl.value = match.name || '';
 
+  // Fill district/thana
   if (match.district) {
     const distSel = document.getElementById('district');
     if (distSel && !distSel.value) {
@@ -93,10 +101,22 @@ async function onPhoneInputLookup(inputEl) {
       }, 50);
     }
   }
+
+  // Fill address
   const addrEl = document.getElementById('address');
   if (addrEl && !addrEl.value.trim() && match.address) addrEl.value = match.address;
 
-  showToast('success', 'পরিচিত গ্রাহক! 👋', `${match.name}-এর তথ্য অটো-ফিল হয়েছে।`);
+  // ★ Auto-fill previous due
+  const prevDueEl = document.getElementById('prev-due');
+  if (prevDueEl && match.previousDue > 0) {
+    prevDueEl.value = match.previousDue.toFixed(2);
+    updateGrandTotal();
+  }
+
+  const dueMsg = match.previousDue > 0
+    ? ` | পূর্বের বাকি: ৳${match.previousDue.toLocaleString('en-US')}`
+    : '';
+  showToast('success', 'পরিচিত গ্রাহক! 👋', `${match.name}-এর তথ্য অটো-ফিল হয়েছে।${dueMsg}`);
 }
 
 // ── DISTRICTS & THANAS ──
@@ -202,22 +222,22 @@ function updateOrderSubtotal() {
 // ── GRAND TOTAL CALCULATION ──
 function updateGrandTotal() {
   const subtotal  = orderItems.reduce((s,i) => s + i.price, 0);
-  const advance   = parseFloat(document.getElementById('advance')?.value)   || 0;
-  const courier   = parseFloat(document.getElementById('courier')?.value)   || 0;
-  const discount  = parseFloat(document.getElementById('discount')?.value)  || 0;
+  const advance   = parseFloat(document.getElementById('advance')?.value)  || 0;
+  const courier   = parseFloat(document.getElementById('courier')?.value)  || 0;
+  const discount  = parseFloat(document.getElementById('discount')?.value) || 0;
+  const prevDue   = parseFloat(document.getElementById('prev-due')?.value) || 0;
 
-  const grandTotal = subtotal + courier - discount;
-  const due        = grandTotal - advance;
+  const grandTotal = subtotal + courier - discount + prevDue;
+  const due        = Math.max(0, grandTotal - advance);
 
-  const fmt = v => '৳ ' + Math.max(0, v).toLocaleString('en-US', {minimumFractionDigits:2});
+  const fmt = v => '৳ ' + v.toLocaleString('en-US', {minimumFractionDigits:2});
 
   const gtEl  = document.getElementById('grand-total-display');
   const dueEl = document.getElementById('due-display');
-  if (gtEl)  gtEl.textContent  = fmt(grandTotal);
-  if (dueEl) dueEl.textContent = fmt(due < 0 ? 0 : due);
+  if (gtEl)  gtEl.textContent = fmt(grandTotal);
+  if (dueEl) dueEl.textContent = fmt(due);
 
-  // store for submit
-  window._calcData = { subtotal, advance, courier, discount, grandTotal, due: Math.max(0, due) };
+  window._calcData = { subtotal, advance, courier, discount, prevDue, grandTotal, due };
 }
 
 
@@ -408,6 +428,7 @@ function saveToGoogleSheets(data, invNo) {
       advance:   data.advance  || 0,
       courier:   data.courier  || 0,
       discount:  data.discount || 0,
+      prevDue:   data.prevDue  || 0,
       due:       data.due      || 0,
       note:      data.note || '',
       datetime:  data.datetime || new Date().toLocaleString('en-US'),
@@ -452,7 +473,7 @@ async function handleSubmit() {
   const invNo = 'KD-' + Date.now().toString().slice(-6);
 
   const subtotal  = orderItems.reduce((s,i) => s+i.price, 0);
-  const calc      = window._calcData || { subtotal, advance:0, courier:0, discount:0, grandTotal:subtotal, due:subtotal };
+  const calc      = window._calcData || { subtotal, advance:0, courier:0, discount:0, prevDue:0, grandTotal:subtotal, due:subtotal };
   const formData = {
     name:      document.getElementById('cust-name').value.trim(),
     phone:     normalizePhone(document.getElementById('cust-phone').value),
@@ -464,6 +485,7 @@ async function handleSubmit() {
     advance:   calc.advance,
     courier:   calc.courier,
     discount:  calc.discount,
+    prevDue:   calc.prevDue,
     grandTotal:calc.grandTotal,
     due:       calc.due,
     datetime:  document.getElementById('datetime-display').textContent || new Date().toLocaleString('en-US'),
@@ -499,7 +521,7 @@ async function handleSubmit() {
 }
 
 function resetForm() {
-  ['cust-name','cust-phone','address','note','advance','courier','discount'].forEach(id => {
+  ['cust-name','cust-phone','address','note','advance','courier','discount','prev-due'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
