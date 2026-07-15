@@ -28,5 +28,5 @@ const SHEET_URL = 'তোমার_URL_এখানে';
 
 
 ### ⚠️ Important: Re-deploy করতে হবে!
-নতুন code (v3) paste করার পর:
+নতুন code (v7) paste করার পর:
 Deploy → Manage Deployments → Edit (pencil) → Version: New Version → Deploy
