@@ -4,7 +4,7 @@
 
 ### Step 1: Google Sheet এ Headers বসাও
 Row 1 তে এই column headers বসাও:
-| A | B | C | D | E | F | G | H | I | J | K |
+| A | B | C | D | E | F | G | H | I | J | K |> update > P
 |---|---|---|---|---|---|---|---|---|---|---|
 | Invoice No | Customer Name | Phone | District | Thana | Address | Products | Total Amount | Date & Time | Note | Server Time |
 
