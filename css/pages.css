@@ -1203,3 +1203,208 @@ table.data-table {
   .dues-summary { grid-template-columns: repeat(4, 1fr); }
   .dues-page-inner { padding: 1.25rem 1.5rem 4rem; }
 }
+
+/* ══════════════════════════════
+   STEADFAST INTEGRATION STYLES
+══════════════════════════════ */
+
+/* Customer fraud badge */
+#sf-customer-badge { display: none; margin-top: .6rem; }
+
+.sf-badge-wrap {
+  background: var(--dark-3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius-sm);
+  padding: .7rem .9rem;
+}
+.sf-badge-title {
+  font-size: .7rem;
+  color: var(--gold);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  display: block;
+  margin-bottom: .4rem;
+}
+.sf-stats { display: flex; flex-wrap: wrap; gap: .4rem .85rem; }
+.sf-stat-item { font-size: .78rem; color: var(--white-dim); }
+.sf-stat-item b { color: var(--white); }
+.sf-stat-risk { font-size: .78rem; font-weight: 700; }
+.sf-badge.new {
+  background: rgba(59,130,246,.1);
+  border: 1px solid rgba(59,130,246,.3);
+  color: #93c5fd;
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: .78rem;
+}
+
+/* Two submit buttons */
+.submit-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  align-items: center;
+}
+.submit-btn-sf {
+  background: linear-gradient(135deg, #1e40af, #1d4ed8);
+  color: #fff;
+  border: none;
+  padding: 15px 32px;
+  border-radius: var(--radius);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .25s;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+  max-width: 420px;
+  box-shadow: 0 4px 20px rgba(29,78,216,.25);
+  -webkit-tap-highlight-color: transparent;
+}
+.submit-btn-sf:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.submit-btn-sf:active { transform: translateY(0); }
+.submit-btn-sf:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+
+/* ══════════════════════════════
+   DELIVERY TRACKING PAGE
+══════════════════════════════ */
+.tracking-page-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1rem 1rem 5rem;
+}
+
+.tracking-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .75rem;
+  margin-bottom: 1.1rem;
+}
+.tr-stat {
+  background: var(--dark-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .85rem 1rem;
+  text-align: center;
+}
+.tr-stat .trn {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 2px;
+}
+.tr-stat .trl { font-size: .65rem; color: var(--white-dim); letter-spacing: .07em; text-transform: uppercase; }
+.tr-stat.all-s      .trn { color: var(--gold); }
+.tr-stat.deliv-s    .trn { color: #22c55e; }
+.tr-stat.pend-s     .trn { color: #f59e0b; }
+.tr-stat.cancel-s   .trn { color: #ef4444; }
+
+.tracking-toolbar {
+  display: flex; gap: .6rem; flex-wrap: wrap; align-items: center;
+  margin-bottom: .85rem;
+}
+.tracking-toolbar input { flex: 1; min-width: 160px; }
+
+.tr-range-btn {
+  background: var(--dark-3);
+  border: 1px solid var(--dark-5);
+  color: var(--white-dim);
+  padding: 6px 13px;
+  border-radius: 20px;
+  font-size: .77rem;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'Hind Siliguri', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.tr-range-btn.active, .tr-range-btn:hover {
+  background: rgba(29,78,216,.15);
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+.tracking-list { display: flex; flex-direction: column; gap: .75rem; }
+
+.tracking-card {
+  background: var(--dark-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.tracking-card:hover { border-color: var(--border-h); }
+
+.tracking-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .8rem 1rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.tracking-inv { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.tracking-code {
+  font-size: .75rem;
+  color: var(--gold-light);
+  background: rgba(201,168,76,.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.sf-status-tag {
+  font-size: .72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.tracking-card-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .75rem 1rem;
+  gap: .5rem;
+}
+.tracking-cust { display: flex; flex-direction: column; gap: 2px; }
+.tc-name { font-size: .9rem; font-weight: 700; color: var(--white); }
+.tc-phone, .tc-loc { font-size: .72rem; color: var(--white-dim); }
+.tracking-amount { text-align: right; flex-shrink: 0; }
+.ta-label { font-size: .62rem; color: var(--white-dim); display: block; }
+.ta-value { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--gold); }
+
+.tracking-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .5rem 1rem;
+  background: rgba(0,0,0,.15);
+  border-top: 1px solid var(--border);
+}
+.tc-date { font-size: .7rem; color: var(--white-dim); }
+.tr-refresh-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--white-dim);
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: .72rem;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'Hind Siliguri', sans-serif;
+}
+.tr-refresh-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+@media(min-width: 600px) {
+  .tracking-summary { grid-template-columns: repeat(4, 1fr); }
+  .tracking-page-inner { padding: 1.25rem 1.5rem 4rem; }
+  .submit-btn-group { flex-direction: row; justify-content: center; }
+  .submit-btn, .submit-btn-sf { width: auto; }
+}
