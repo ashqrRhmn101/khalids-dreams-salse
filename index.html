@@ -33,6 +33,7 @@
     <a href="#"               onclick="showPage('products')"  id="nav-products">📦 পণ্য তালিকা</a>
     <a href="#"               onclick="showPage('customers')" id="nav-customers">👥 গ্রাহক তালিকা</a>
     <a href="#"               onclick="showPage('dues')"      id="nav-dues">💳 দেনা-পাওনা</a>
+    <a href="#"               onclick="showPage('tracking')"  id="nav-tracking">🚚 ডেলিভারি ট্র্যাকিং</a>
     <a href="#"               onclick="showPage('tracker')"   id="nav-tracker">
       ⏳ অর্ডার ট্র্যাকার
       <span class="pending-badge" id="pending-badge" style="display:none">0</span>
@@ -55,6 +56,7 @@
     <a href="#" onclick="showPage('products');closeMobileMenu()"><span class="nav-icon">📦</span> পণ্য তালিকা</a>
     <a href="#" onclick="showPage('customers');closeMobileMenu()"><span class="nav-icon">👥</span> গ্রাহক তালিকা</a>
     <a href="#" onclick="showPage('dues');closeMobileMenu()"><span class="nav-icon">💳</span> দেনা-পাওনা</a>
+    <a href="#" onclick="showPage('tracking');closeMobileMenu()"><span class="nav-icon">🚚</span> ডেলিভারি ট্র্যাকিং</a>
     <a href="#" onclick="showPage('tracker');closeMobileMenu()">
       <span class="nav-icon">⏳</span> অর্ডার ট্র্যাকার
       <span class="pending-badge" id="pending-badge-mob" style="display:none">0</span>
@@ -99,6 +101,7 @@
         <div class="form-group">
           <label for="cust-phone">ফোন নম্বর *</label>
           <input type="tel" id="cust-phone" placeholder="01XXXXXXXXX" inputmode="numeric" />
+          <div id="sf-customer-badge"></div>
         </div>
         <div class="form-group">
           <label for="district">জেলা *</label>
@@ -193,10 +196,15 @@
     </div>
 
     <div class="submit-section">
-      <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">
-        🧾 সেল সম্পন্ন করুন ও PDF ডাউনলোড
-      </button>
-      <p class="submit-note">PDF ডাউনলোড হবে এবং Google Sheets-এ সেভ হবে</p>
+      <div class="submit-btn-group">
+        <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">
+          🧾 PDF ও Sheet-এ সেভ করুন
+        </button>
+        <button class="submit-btn-sf" id="submit-btn-sf" onclick="handleSubmitWithSteadfast()">
+          🚀 PDF + Sheet + Steadfast অর্ডার
+        </button>
+      </div>
+      <p class="submit-note">প্রথম বাটন — সাধারণ কুরিয়ার | দ্বিতীয় বাটন — Steadfast কুরিয়ার</p>
     </div>
   </div>
 </div>
@@ -502,6 +510,54 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════
+     PAGE: DELIVERY TRACKING
+══════════════════════════════════ -->
+<div class="page" id="page-tracking">
+  <div class="page-header">
+    <h1>🚚 ডেলিভারি ট্র্যাকিং</h1>
+    <p>Steadfast-এর সব shipment-এর live status দেখুন</p>
+  </div>
+  <div class="tracking-page-inner">
+
+    <div class="loading-state" id="tracking-loading" style="display:none">
+      <div class="spinner"></div>
+      <p>Steadfast ডেটা লোড হচ্ছে...</p>
+    </div>
+
+    <div id="tracking-content">
+      <!-- Summary -->
+      <div class="tracking-summary">
+        <div class="tr-stat all-s"><span class="trn" id="tr-total">0</span><span class="trl">মোট শিপমেন্ট</span></div>
+        <div class="tr-stat deliv-s"><span class="trn" id="tr-delivered">0</span><span class="trl">ডেলিভারড</span></div>
+        <div class="tr-stat pend-s"><span class="trn" id="tr-pending">0</span><span class="trl">চলমান</span></div>
+        <div class="tr-stat cancel-s"><span class="trn" id="tr-cancelled">0</span><span class="trl">বাতিল</span></div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="tracking-toolbar">
+        <input type="text" id="tr-search" placeholder="🔍 নাম, ফোন বা Invoice/Tracking দিয়ে খুঁজুন..."
+          oninput="searchTracking()" />
+        <button id="tr-refresh-all-btn" class="export-btn" onclick="refreshAllTrackingStatuses()">
+          🔄 সব আপডেট করুন
+        </button>
+        <button class="refresh-btn" onclick="refreshTracking()">↺</button>
+      </div>
+
+      <!-- Range filter -->
+      <div class="range-filter" style="margin-bottom:.85rem;">
+        <button class="tr-range-btn" data-range="7"   onclick="setTrackingRange('7')">৭ দিন</button>
+        <button class="tr-range-btn" data-range="30"  onclick="setTrackingRange('30')">৩০ দিন</button>
+        <button class="tr-range-btn" data-range="90"  onclick="setTrackingRange('90')">৯০ দিন</button>
+        <button class="tr-range-btn active" data-range="all" onclick="setTrackingRange('all')">সব</button>
+      </div>
+
+      <div class="result-count" id="tr-result-count"></div>
+      <div class="tracking-list" id="tracking-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ FOOTER ══ -->
 <footer>
   <div class="footer-inner">
@@ -521,6 +577,7 @@
         <a href="#" onclick="showPage('customers')">👥 গ্রাহক তালিকা</a>
         <a href="#" onclick="showPage('dues')">💳 দেনা-পাওনা</a>
         <a href="#" onclick="showPage('tracker')">⏳ অর্ডার ট্র্যাকার</a>
+        <a href="#" onclick="showPage('tracking')">🚚 ডেলিভারি ট্র্যাকিং</a>
       </div>
       <div class="footer-col">
         <h4>যোগাযোগ</h4>
@@ -669,6 +726,7 @@
 <script src="js/tracker.js"></script>
 <script src="js/history.js"></script>
 <script src="js/dues.js"></script>
+<script src="js/steadfast.js"></script>
 <script src="js/customers.js"></script>
 
 <script>
@@ -685,6 +743,7 @@ function showPage(page) {
   if (page === 'history')   initHistory();
   if (page === 'customers') initCustomers();
   if (page === 'dues')      initDues();
+  if (page === 'tracking')  initTracking();
 }
 
 // ── MOBILE MENU ──
