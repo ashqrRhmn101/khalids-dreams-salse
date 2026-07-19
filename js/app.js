@@ -117,6 +117,11 @@ async function onPhoneInputLookup(inputEl) {
     ? ` | পূর্বের বাকি: ৳${match.previousDue.toLocaleString('en-US')}`
     : '';
   showToast('success', 'পরিচিত গ্রাহক! 👋', `${match.name}-এর তথ্য অটো-ফিল হয়েছে।${dueMsg}`);
+
+  // Steadfast fraud/history check (async, non-blocking)
+  if (typeof checkSteadfastPhone === 'function') {
+    checkSteadfastPhone(phone);
+  }
 }
 
 // ── DISTRICTS & THANAS ──
@@ -461,19 +466,38 @@ function saveToGoogleSheets(data, invNo) {
   });
 }
 
-// ── SUBMIT ──
+// ── SUBMIT: PDF + Sheet only ──
+let isSubmitting = false;
+
 async function handleSubmit() {
   if (!validateForm()) return;
+  if (isSubmitting) return;
+  isSubmitting = true;
+  await _doSubmit(false);
+  isSubmitting = false;
+}
 
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="btn-spinner"></span> প্রসেস হচ্ছে...';
+// ── SUBMIT: PDF + Sheet + Steadfast ──
+async function handleSubmitWithSteadfast() {
+  if (!validateForm()) return;
+  if (isSubmitting) return;
+  isSubmitting = true;
+  await _doSubmit(true);
+  isSubmitting = false;
+}
 
-  // ★ Generate invoice number ONCE — used for both PDF & Sheet
-  const invNo = 'KD-' + Date.now().toString().slice(-6);
+async function _doSubmit(withSteadfast) {
+  const btn1 = document.getElementById('submit-btn');
+  const btn2 = document.getElementById('submit-btn-sf');
+  const L1 = '🧾 PDF ও Sheet-এ সেভ করুন';
+  const L2 = '🚀 PDF + Sheet + Steadfast অর্ডার';
+  if (btn1) { btn1.disabled = true; btn1.innerHTML = '<span class="btn-spinner"></span> প্রসেস হচ্ছে...'; }
+  if (btn2) { btn2.disabled = true; btn2.innerHTML = '<span class="btn-spinner"></span> প্রসেস হচ্ছে...'; }
 
-  const subtotal  = orderItems.reduce((s,i) => s+i.price, 0);
-  const calc      = window._calcData || { subtotal, advance:0, courier:0, discount:0, prevDue:0, grandTotal:subtotal, due:subtotal };
+  const invNo    = 'KD-' + Date.now().toString().slice(-6);
+  const subtotal = orderItems.reduce((s,i) => s+i.price, 0);
+  const calc     = window._calcData || { subtotal, advance:0, courier:0, discount:0, prevDue:0, grandTotal:subtotal, due:subtotal };
+
   const formData = {
     name:      document.getElementById('cust-name').value.trim(),
     phone:     normalizePhone(document.getElementById('cust-phone').value),
@@ -494,9 +518,13 @@ async function handleSubmit() {
   };
 
   try {
-    // PDF + Sheet use same invNo
     await generatePDF(formData, invNo);
     const sheetResult = await saveToGoogleSheets(formData, invNo);
+
+    let sfResult = null;
+    if (withSteadfast && typeof createSteadfastOrder === 'function') {
+      sfResult = await createSteadfastOrder(formData, invNo);
+    }
 
     dailyTotal += calc.grandTotal;
     dailySales += 1;
@@ -505,18 +533,28 @@ async function handleSubmit() {
     localStorage.setItem('kd_last_date', new Date().toDateString());
     updateDailyDisplay();
 
-    showToast('success', 'সেল সম্পন্ন! ✓',
-      sheetResult.success ? 'PDF ডাউনলোড ও Sheet-এ সেভ হয়েছে।'
-                          : 'PDF ডাউনলোড হয়েছে। Sheet সেভ চেক করুন।');
-    customerLookupCache = null; // refresh lookup cache for next entry
+    if (withSteadfast && sfResult && sfResult.success) {
+      showToast('success', '🚀 সম্পন্ন!',
+        `PDF ✓ | Sheet ✓ | Steadfast ✓ — Tracking: ${sfResult.trackingCode}`);
+    } else if (withSteadfast && sfResult && !sfResult.success) {
+      showToast('error', 'Steadfast সমস্যা',
+        'PDF ও Sheet সেভ হয়েছে। Steadfast: ' + (sfResult.message || 'failed'));
+    } else {
+      showToast('success', 'সেল সম্পন্ন! ✓',
+        sheetResult.success ? 'PDF ডাউনলোড ও Sheet-এ সেভ হয়েছে।'
+                            : 'PDF হয়েছে। Sheet চেক করুন।');
+    }
+
+    customerLookupCache = null;
+    if (typeof sfPhoneCache !== 'undefined') sfPhoneCache = {};
     setTimeout(resetForm, 2000);
 
-  } catch (e) {
+  } catch(e) {
     console.error(e);
     showToast('error', 'ত্রুটি', 'সমস্যা হয়েছে। Console চেক করুন।');
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = '🧾 সেল সম্পন্ন করুন ও PDF ডাউনলোড';
+    if (btn1) { btn1.disabled = false; btn1.innerHTML = L1; }
+    if (btn2) { btn2.disabled = false; btn2.innerHTML = L2; }
   }
 }
 
