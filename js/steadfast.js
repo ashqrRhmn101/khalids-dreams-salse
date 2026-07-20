@@ -40,49 +40,93 @@ function sfStatusLabel(status) {
   return map[status?.toLowerCase()] || { label: status || '—', color: '#94a3b8' };
 }
 
-// ── PHONE FRAUD/HISTORY CHECK ──
-let sfPhoneCache = {};
+// ── FRAUDBD: Phone দিয়ে customer history check ──
+let fraudBdCache = {};
 
 async function checkSteadfastPhone(phone) {
   const norm = normalizePhone(phone);
   if (norm.length < 11) return;
-  if (sfPhoneCache[norm]) { renderSfBadge(sfPhoneCache[norm]); return; }
 
-  const result = await sfCall({ action: 'steadfast_check_phone', phone: norm });
-  if (!result.success) return;
+  // Show loading badge
+  const el = document.getElementById('sf-customer-badge');
+  if (el) {
+    el.style.display = 'block';
+    el.innerHTML = '<div class="sf-badge-wrap"><span class="sf-badge-title">🔍 গ্রাহকের ইতিহাস যাচাই হচ্ছে...</span></div>';
+  }
 
-  const data   = result.data || {};
-  const orders = data.orders || data.data || [];
-  const total     = orders.length;
-  const delivered = orders.filter(o => o.status === 'delivered').length;
-  const cancelled = orders.filter(o => o.status === 'cancelled').length;
-  const cancelRate = total > 0 ? Math.round((cancelled / total) * 100) : 0;
+  if (fraudBdCache[norm]) { renderSfBadge(fraudBdCache[norm]); return; }
 
-  const info = { total, delivered, cancelled, cancelRate };
-  sfPhoneCache[norm] = info;
+  const result = await sfCall({ action: 'fraudbd_check', phone: norm });
+
+  if (!result.success) {
+    if (el) el.style.display = 'none';
+    return;
+  }
+
+  const sf  = result.steadfast  || { total:0, success:0, cancel:0 };
+  const all = result.allCouriers || { total:0, success:0, cancel:0 };
+
+  const info = {
+    sfTotal:    sf.total,
+    sfSuccess:  sf.success,
+    sfCancel:   sf.cancel,
+    sfCancelRate: sf.total > 0 ? Math.round((sf.cancel / sf.total) * 100) : 0,
+    allTotal:   all.total,
+    allSuccess: all.success,
+    allCancel:  all.cancel,
+    allCancelRate: all.total > 0 ? Math.round((all.cancel / all.total) * 100) : 0,
+  };
+
+  fraudBdCache[norm] = info;
   renderSfBadge(info);
 }
 
 function renderSfBadge(info) {
   const el = document.getElementById('sf-customer-badge');
   if (!el) return;
-  if (info.total === 0) {
-    el.innerHTML = '<span class="sf-badge new">🆕 Steadfast-এ নতুন গ্রাহক</span>';
-  } else {
-    const riskColor = info.cancelRate >= 50 ? '#ef4444' : info.cancelRate >= 30 ? '#f59e0b' : '#22c55e';
-    const riskLabel = info.cancelRate >= 50 ? '⚠️ উচ্চ ঝুঁকি' : info.cancelRate >= 30 ? '🔶 মাঝারি ঝুঁকি' : '✅ নির্ভরযোগ্য';
-    el.innerHTML = `
-      <div class="sf-badge-wrap">
-        <span class="sf-badge-title">📦 Steadfast ইতিহাস</span>
-        <div class="sf-stats">
-          <span class="sf-stat-item">মোট: <b>${info.total}</b></span>
-          <span class="sf-stat-item" style="color:#22c55e">ডেলিভারড: <b>${info.delivered}</b></span>
-          <span class="sf-stat-item" style="color:#ef4444">বাতিল: <b>${info.cancelled}</b></span>
-          <span class="sf-stat-risk" style="color:${riskColor}">${riskLabel} (${info.cancelRate}%)</span>
-        </div>
-      </div>`;
+
+  if (info.sfTotal === 0 && info.allTotal === 0) {
+    el.style.display = 'block';
+    el.innerHTML = '<span class="sf-badge new">🆕 কোনো courier ইতিহাস নেই — নতুন গ্রাহক</span>';
+    return;
   }
+
+  // Risk based on Steadfast cancel rate (or all-courier if no SF data)
+  const rate      = info.sfTotal > 0 ? info.sfCancelRate : info.allCancelRate;
+  const riskColor = rate >= 50 ? '#ef4444' : rate >= 30 ? '#f59e0b' : '#22c55e';
+  const riskLabel = rate >= 50 ? '⚠️ উচ্চ ঝুঁকি — সতর্কতার সাথে অর্ডার করুন'
+                  : rate >= 30 ? '🔶 মাঝারি ঝুঁকি'
+                  : '✅ নির্ভরযোগ্য গ্রাহক';
+
   el.style.display = 'block';
+  el.innerHTML = `
+    <div class="sf-badge-wrap">
+      <span class="sf-badge-title">📦 Courier ইতিহাস (FraudBD)</span>
+      <div class="sf-badge-sections">
+        ${info.sfTotal > 0 ? `
+        <div class="sf-section">
+          <div class="sf-section-title">🚚 Steadfast</div>
+          <div class="sf-stats">
+            <span class="sf-stat-item">মোট: <b>${info.sfTotal}</b></span>
+            <span class="sf-stat-item" style="color:#22c55e">ডেলিভারড: <b>${info.sfSuccess}</b></span>
+            <span class="sf-stat-item" style="color:#ef4444">বাতিল: <b>${info.sfCancel}</b></span>
+            <span class="sf-stat-item">Cancel Rate: <b>${info.sfCancelRate}%</b></span>
+          </div>
+        </div>` : ''}
+        ${info.allTotal > info.sfTotal ? `
+        <div class="sf-section">
+          <div class="sf-section-title">🌐 সব Courier মিলিয়ে</div>
+          <div class="sf-stats">
+            <span class="sf-stat-item">মোট: <b>${info.allTotal}</b></span>
+            <span class="sf-stat-item" style="color:#22c55e">ডেলিভারড: <b>${info.allSuccess}</b></span>
+            <span class="sf-stat-item" style="color:#ef4444">বাতিল: <b>${info.allCancel}</b></span>
+          </div>
+        </div>` : ''}
+      </div>
+      <div class="sf-stat-risk" style="color:${riskColor};margin-top:.5rem;font-size:.82rem;font-weight:700;">
+        ${riskLabel} (Cancel: ${rate}%)
+      </div>
+    </div>`;
 }
 
 // ── CREATE STEADFAST ORDER ──

@@ -11,6 +11,13 @@ const STEADFAST_API_KEY    = 'oumpa8mpf0c5dfa0slj8dxrdprl2b0s8';
 const STEADFAST_SECRET_KEY = 'btu7xsynyy2p8sy8u8bdqnlr';
 const STEADFAST_BASE_URL   = 'https://portal.packzy.com/api/v1';
 // ════════════════════════════════════════════════════
+// FraudBD API — Customer fraud check
+const FRAUDBD_API_KEY = 'fe9a118ac2332c87c85cbd9b5b7b5af6f6b27e0974ece6360d189401bd78777a';
+const FRAUDBD_BASE_URL = 'https://fraudbd.com';
+
+function fraudBdHeaders_() {
+  return { 'Authorization': 'Bearer ' + FRAUDBD_API_KEY, 'Content-Type': 'application/json' };
+}
 
 function normalizePhone_(phone) {
   let p = String(phone || '').trim().replace(/[\s\-]/g, '');
@@ -210,6 +217,42 @@ function doGet(e) {
         Utilities.sleep(300); // rate limit — 300ms gap
       }
       return jsonp_(cb, { success: true, updated });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── FRAUDBD: Phone দিয়ে customer history check ──
+  if (p.action === 'fraudbd_check') {
+    try {
+      const phone = normalizePhone_(p.phone);
+      const resp  = UrlFetchApp.fetch(
+        FRAUDBD_BASE_URL + '/api/check-phone/' + phone,
+        { method: 'GET', headers: fraudBdHeaders_(), muteHttpExceptions: true }
+      );
+      const code   = resp.getResponseCode();
+      const result = JSON.parse(resp.getContentText());
+
+      if (code === 200 && result.status) {
+        const sf  = (result.data && result.data.Summaries && result.data.Summaries.Steadfast) || {};
+        const all = result.data && result.data.totalSummary || {};
+        return jsonp_(cb, {
+          success: true,
+          steadfast: {
+            total:   sf.total   || 0,
+            success: sf.success || 0,
+            cancel:  sf.cancel  || 0,
+          },
+          allCouriers: {
+            total:   all.total   || 0,
+            success: all.success || 0,
+            cancel:  all.cancel  || 0,
+          },
+          raw: result.data,
+        });
+      } else {
+        return jsonp_(cb, { success: false, message: result.message || 'Not found', code });
+      }
     } catch(err) {
       return jsonp_(cb, { success: false, error: err.message });
     }

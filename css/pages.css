@@ -1408,3 +1408,28 @@ table.data-table {
   .submit-btn-group { flex-direction: row; justify-content: center; }
   .submit-btn, .submit-btn-sf { width: auto; }
 }
+
+/* ══ FraudBD Badge Updates ══ */
+.sf-badge-sections {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-top: .5rem;
+}
+.sf-section {
+  background: rgba(0,0,0,.2);
+  border-radius: 7px;
+  padding: .5rem .7rem;
+}
+.sf-section-title {
+  font-size: .7rem;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: .06em;
+  margin-bottom: .3rem;
+}
+.sf-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem .7rem;
+}
