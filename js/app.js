@@ -1,10 +1,10 @@
 // ══════════════════════════════════════════════
-//  Khalid's Dreams — Sales App v3
+//  Khalid's Dreams — Sales App v11
 //  Fixes: Invoice sync, Bangla PDF, Mobile UI
 // ══════════════════════════════════════════════
 
 // ── YOUR GOOGLE SHEET URL ──
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyVkNaPQT-fPuvSeEofs4iTEqZWmmThzkx9r8Hmm2OyWyOsh7eNbSBJetc8lHPTwByuxQ/exec';
+
 
 // ── STATE ──
 let orderItems  = [];
