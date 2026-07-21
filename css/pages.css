@@ -1433,3 +1433,49 @@ table.data-table {
   flex-wrap: wrap;
   gap: .3rem .7rem;
 }
+
+/* ══ See More Button ══ */
+.see-more-btn {
+  background: var(--dark-3);
+  border: 1.5px dashed var(--border-h);
+  color: var(--gold);
+  padding: 10px 28px;
+  border-radius: 20px;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .25s;
+  -webkit-tap-highlight-color: transparent;
+}
+.see-more-btn:hover {
+  background: rgba(201,168,76,.1);
+  border-style: solid;
+}
+
+/* ══ Invoice Edit/PDF Action Buttons ══ */
+.cd-action-btn {
+  background: var(--dark-3);
+  border: 1px solid var(--dark-5);
+  border-radius: 6px;
+  padding: 4px 7px;
+  cursor: pointer;
+  font-size: .8rem;
+  transition: all .2s;
+  margin-left: 3px;
+  -webkit-tap-highlight-color: transparent;
+}
+.cd-action-btn.edit-btn:hover { background: rgba(201,168,76,.15); border-color: var(--gold); }
+.cd-action-btn.pdf-btn:hover  { background: rgba(59,130,246,.15);  border-color: #3b82f6; }
+
+/* ══ Datetime auto display ══ */
+.datetime-display {
+  background: var(--dark-3);
+  border: 1px solid var(--dark-5);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  font-size: .85rem;
+  color: var(--gold-light);
+  flex: 1;
+  font-family: 'Hind Siliguri', sans-serif;
+}
