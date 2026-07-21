@@ -258,6 +258,30 @@ function doGet(e) {
     }
   }
 
+  // ── EDIT INVOICE ──
+  if (p.action === 'edit_invoice') {
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+      const rows  = sheet.getDataRange().getValues();
+      let   found = false;
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]) === String(p.invoiceNo)) {
+          if (p.total    !== undefined) sheet.getRange(i+1, 12).setValue(parseFloat(p.total)   || 0); // L
+          if (p.courier  !== undefined) sheet.getRange(i+1,  9).setValue(parseFloat(p.courier) || 0); // I
+          if (p.discount !== undefined) sheet.getRange(i+1, 10).setValue(parseFloat(p.discount)|| 0); // J
+          if (p.advance  !== undefined) sheet.getRange(i+1, 11).setValue(parseFloat(p.advance) || 0); // K
+          if (p.due      !== undefined) sheet.getRange(i+1, 13).setValue(parseFloat(p.due)     || 0); // M
+          if (p.note     !== undefined) sheet.getRange(i+1, 15).setValue(p.note || '');               // O
+          found = true;
+          break;
+        }
+      }
+      return jsonp_(cb, { success: found, message: found ? 'Updated' : 'Invoice not found' });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
   // ── SAVE — নতুন sale Google Sheet-এ save ──
   try {
     const sheet  = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
