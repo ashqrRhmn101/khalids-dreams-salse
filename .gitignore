@@ -1,0 +1,17 @@
+# ══ Khalid's Dreams — .gitignore ══
+# এই ফাইলগুলো GitHub-এ push হবে না
+
+# Sensitive config
+config.js
+config.local.js
+.env
+.env.local
+secrets.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
