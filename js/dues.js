@@ -150,6 +150,10 @@ function renderDuesChart(sales, rangeDays) {
 }
 
 // ── RENDER DUES LIST ──
+const DUES_PAGE_SIZE = 20;
+let duesPage = 1;
+let _currentDuesList = [];
+
 function renderDuesList() {
   const list = document.getElementById('dues-list');
   if (!list) return;
@@ -165,16 +169,20 @@ function renderDuesList() {
 
   // Sort by totalDue descending
   filtered.sort((a,b) => b.totalDue - a.totalDue);
+  _currentDuesList = filtered;
+  duesPage = 1;
 
   document.getElementById('dues-result-count').textContent =
     filtered.length + 'জন গ্রাহকের বাকি আছে';
 
   if (!filtered.length) {
     list.innerHTML = `<div class="empty-state"><span class="e-icon">🎉</span><p>কোনো বাকি নেই!</p></div>`;
+    document.getElementById('dues-seemore-wrap')?.remove();
     return;
   }
 
-  list.innerHTML = filtered.map(c => `
+  const paged = _currentDuesList.slice(0, duesPage * DUES_PAGE_SIZE);
+  list.innerHTML = paged.map(c => `
     <div class="due-card">
       <div class="due-card-top" onclick="openDueDetail('${c.phone}')">
         <div class="due-avatar">${c.name.charAt(0).toUpperCase()}</div>
@@ -197,6 +205,60 @@ function renderDuesList() {
         </button>
       </div>
     </div>`).join('');
+
+  // See more button
+  document.getElementById('dues-seemore-wrap')?.remove();
+  const duesRemaining = _currentDuesList.length - paged.length;
+  if (duesRemaining > 0) {
+    const wrap = document.createElement('div');
+    wrap.id = 'dues-seemore-wrap';
+    wrap.style.cssText = 'text-align:center;padding:1rem 0;';
+    wrap.innerHTML = `<button class="see-more-btn" onclick="duesLoadMore()">
+      আরো দেখুন (${duesRemaining}জন বাকি ↓)
+    </button>`;
+    list.after(wrap);
+  }
+}
+
+function duesLoadMore() {
+  duesPage++;
+  const list   = document.getElementById('dues-list');
+  const paged  = _currentDuesList.slice(0, duesPage * DUES_PAGE_SIZE);
+  list.innerHTML = paged.map(c => `
+    <div class="due-card">
+      <div class="due-card-top" onclick="openDueDetail('${c.phone}')">
+        <div class="due-avatar">${c.name.charAt(0).toUpperCase()}</div>
+        <div class="due-info">
+          <div class="due-name">${c.name}</div>
+          <div class="due-meta">📞 ${c.phone}${c.district ? ' · 📍' + c.district : ''}</div>
+          <div class="due-inv-count">${c.invoices.length}টি ইনভয়েসে বাকি</div>
+        </div>
+        <div class="due-amount-wrap">
+          <div class="due-amount">৳${c.totalDue.toLocaleString('en-US', {minimumFractionDigits:2})}</div>
+          <div class="due-amount-lbl">মোট বাকি</div>
+        </div>
+      </div>
+      <div class="due-card-actions">
+        <button class="due-pay-btn" onclick="openPaymentModal('${c.phone}','${c.name}',${c.totalDue})">
+          💰 পরিশোধ নিন
+        </button>
+        <button class="due-detail-btn" onclick="openDueDetail('${c.phone}')">
+          📋 বিস্তারিত
+        </button>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('dues-seemore-wrap')?.remove();
+  const remaining2 = _currentDuesList.length - paged.length;
+  if (remaining2 > 0) {
+    const wrap = document.createElement('div');
+    wrap.id = 'dues-seemore-wrap';
+    wrap.style.cssText = 'text-align:center;padding:1rem 0;';
+    wrap.innerHTML = `<button class="see-more-btn" onclick="duesLoadMore()">
+      আরো দেখুন (${remaining2}জন বাকি ↓)
+    </button>`;
+    list.after(wrap);
+  }
 }
 
 // ── DUE DETAIL MODAL ──

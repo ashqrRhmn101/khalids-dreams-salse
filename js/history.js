@@ -7,6 +7,28 @@ let filteredSales = [];
 let historyLoaded = false;
 let activeRange   = '30';
 
+// ── PAGINATION ──
+const PAGE_SIZE = 20;
+let historyPage = 1;
+
+function paginateArray(arr, page, size) {
+  return arr.slice(0, page * size);
+}
+
+function renderSeeMore(containerId, total, current, onClickFn) {
+  const existing = document.getElementById(containerId + '-seemore');
+  if (existing) existing.remove();
+  if (current >= total) return;
+  const remaining = total - current;
+  const btn = document.createElement('div');
+  btn.id = containerId + '-seemore';
+  btn.style.cssText = 'text-align:center;margin-top:1rem;';
+  btn.innerHTML = `<button onclick="${onClickFn}()" class="see-more-btn">
+    আরো দেখুন (${remaining}টি বাকি)
+  </button>`;
+  document.getElementById(containerId).after(btn);
+}
+
 // ── FETCH FROM GOOGLE SHEETS ──
 function fetchSalesData() {
   return new Promise((resolve) => {
@@ -96,14 +118,23 @@ function renderChart(sales) {
 }
 
 // ── RENDER TABLE ──
+let _currentHistorySales = [];
+
 function renderHistoryTable(sales) {
+  _currentHistorySales = [...sales].sort((a,b) => new Date(b.timestamp||0) - new Date(a.timestamp||0));
+  historyPage = 1;
+  _renderHistoryRows();
+}
+
+function _renderHistoryRows() {
   const tbody = document.getElementById('history-tbody');
-  if (!sales.length) {
+  if (!_currentHistorySales.length) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--white-dim);">কোনো রেকর্ড নেই</td></tr>`;
+    document.getElementById('h-seemore-wrap')?.remove();
     return;
   }
-  const sorted = [...sales].sort((a,b) => new Date(b.timestamp||0) - new Date(a.timestamp||0));
-  tbody.innerHTML = sorted.map(s => `
+  const paged = _currentHistorySales.slice(0, historyPage * PAGE_SIZE);
+  tbody.innerHTML = paged.map(s => `
     <tr>
       <td><span class="inv-badge">${s.invoiceNo}</span></td>
       <td>
@@ -114,17 +145,34 @@ function renderHistoryTable(sales) {
         <div class="td-sub" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
           title="${s.items}">${s.items || '—'}</div>
       </td>
-      <td><span class="td-amount">৳${Number(s.total).toLocaleString('en-US')}</span></td>
-      <td>
-        <div class="td-sub">${s.district}${s.thana?' / '+s.thana:''}</div>
-      </td>
-      <td>
-        <div class="td-sub">${s.datetime ? s.datetime.split(' at ')[0] : '—'}</div>
-      </td>
+      <td><span class="td-amount">৳${Number(s.total||0).toLocaleString('en-US')}</span></td>
+      <td><div class="td-sub">${s.district}${s.thana?' / '+s.thana:''}</div></td>
+      <td><div class="td-sub">${s.datetime ? s.datetime.split(' at ')[0] : '—'}</div></td>
     </tr>`).join('');
+
+  // See more button
+  document.getElementById('h-seemore-wrap')?.remove();
+  const shown    = paged.length;
+  const total    = _currentHistorySales.length;
+  const remaining= total - shown;
+  if (remaining > 0) {
+    const wrap = document.createElement('div');
+    wrap.id = 'h-seemore-wrap';
+    wrap.style.cssText = 'text-align:center;padding:1rem 0;';
+    wrap.innerHTML = `<button class="see-more-btn" onclick="historyLoadMore()">
+      আরো দেখুন (${remaining}টি বাকি ↓)
+    </button>`;
+    tbody.closest('table').after(wrap);
+  }
+}
+
+function historyLoadMore() {
+  historyPage++;
+  _renderHistoryRows();
 }
 
 // ── SEARCH ──
+
 function searchHistory() {
   const q = document.getElementById('h-search').value.trim().toLowerCase();
   filteredSales = q

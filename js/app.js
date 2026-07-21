@@ -254,7 +254,6 @@ function setDateTime() {
   });
   document.getElementById('datetime-display').textContent = display;
   document.getElementById('datetime-value').value = now.toISOString();
-  showToast('success', 'সময় সেট হয়েছে', 'তারিখ ও সময় ক্যাপচার হয়েছে।');
 }
 
 // ── NAV CLOCK ──
@@ -325,6 +324,10 @@ async function generatePDF(data, invNo) {
     ${discount > 0 ? `<tr>
       <td colspan="2" style="padding:6px 10px;font-size:11px;color:#5a5040;">ছাড় (Discount)</td>
       <td style="padding:6px 10px;font-size:11px;text-align:right;color:#c0392b;">- ৳${discount.toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+    </tr>` : ''}
+    ${prevDue > 0 ? `<tr>
+      <td colspan="2" style="padding:6px 10px;font-size:11px;color:#e57373;font-weight:600;">পূর্বের জের (Previous Due)</td>
+      <td style="padding:6px 10px;font-size:11px;text-align:right;color:#e57373;font-weight:600;">+ ৳${prevDue.toLocaleString('en-US',{minimumFractionDigits:2})}</td>
     </tr>` : ''}
     ${advance > 0 ? `<tr>
       <td colspan="2" style="padding:6px 10px;font-size:11px;color:#5a5040;">অগ্রিম প্রদান</td>
@@ -468,6 +471,7 @@ function saveToGoogleSheets(data, invNo) {
 
 // ── SUBMIT: PDF + Sheet only ──
 let isSubmitting = false;
+let lastSubmitInvNo = '';  // prevent exact duplicate within 10s
 
 async function handleSubmit() {
   if (!validateForm()) return;
@@ -493,6 +497,9 @@ async function _doSubmit(withSteadfast) {
   const L2 = '🚀 PDF + Sheet + Steadfast অর্ডার';
   if (btn1) { btn1.disabled = true; btn1.innerHTML = '<span class="btn-spinner"></span> প্রসেস হচ্ছে...'; }
   if (btn2) { btn2.disabled = true; btn2.innerHTML = '<span class="btn-spinner"></span> প্রসেস হচ্ছে...'; }
+
+  // ★ Auto-refresh datetime at submit moment
+  setDateTime();
 
   const invNo    = 'KD-' + Date.now().toString().slice(-6);
   const subtotal = orderItems.reduce((s,i) => s+i.price, 0);
@@ -571,6 +578,7 @@ function resetForm() {
   window._calcData = null;
   addOrderItem();
   updateGrandTotal();
+  setDateTime(); // auto-refresh datetime for next sale
 }
 
 // ── TOAST ──
@@ -590,8 +598,9 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDailyDisplay();
   updateNavClock();
   setInterval(updateNavClock, 30000);
+  setDateTime(); // ★ Auto-set datetime on page load
 
-  // Auto-fill on phone blur / input pause
+  // Auto-fill on phone input pause / blur
   const phoneEl = document.getElementById('cust-phone');
   if (phoneEl) {
     let debounceTimer;
