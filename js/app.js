@@ -1,10 +1,9 @@
 // ══════════════════════════════════════════════
-//  Khalid's Dreams — Sales App v11
+//  Khalid's Dreams — Sales App v3
 //  Fixes: Invoice sync, Bangla PDF, Mobile UI
 // ══════════════════════════════════════════════
 
 // ── YOUR GOOGLE SHEET URL ──
-
 
 // ── STATE ──
 let orderItems  = [];
@@ -309,6 +308,7 @@ async function generatePDF(data, invNo) {
   const advance    = data.advance    || 0;
   const courier    = data.courier    || 0;
   const discount   = data.discount   || 0;
+  const prevDue    = data.prevDue    || 0;
   const grandTotal = data.grandTotal || subtotal;
   const due        = data.due        || grandTotal;
 
