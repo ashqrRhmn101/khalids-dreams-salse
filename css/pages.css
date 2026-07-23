@@ -1479,3 +1479,18 @@ table.data-table {
   flex: 1;
   font-family: 'Hind Siliguri', sans-serif;
 }
+
+/* ══ Steadfast Cancel Button ══ */
+.tr-cancel-btn {
+  background: rgba(229,57,53,.1);
+  border: 1px solid rgba(229,57,53,.3);
+  color: #e57373;
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: .72rem;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'Hind Siliguri', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.tr-cancel-btn:hover { background: rgba(229,57,53,.2); border-color: #e57373; }
