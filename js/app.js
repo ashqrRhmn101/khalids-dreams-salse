@@ -1,9 +1,12 @@
 // ══════════════════════════════════════════════
-//  Khalid's Dreams — Sales App v3
-//  Fixes: Invoice sync, Bangla PDF, Mobile UI
+//  Khalid's Dreams — Sales App v12
 // ══════════════════════════════════════════════
 
-// ── YOUR GOOGLE SHEET URL ──
+// // If config.js not found, fallback empty (will show error on submit)
+// if (typeof SHEET_URL === 'undefined') {
+//   console.error('config.js not loaded! SHEET_URL missing.');
+//   var SHEET_URL = '';
+// }
 
 // ── STATE ──
 let orderItems  = [];
@@ -308,7 +311,6 @@ async function generatePDF(data, invNo) {
   const advance    = data.advance    || 0;
   const courier    = data.courier    || 0;
   const discount   = data.discount   || 0;
-  const prevDue    = data.prevDue    || 0;
   const grandTotal = data.grandTotal || subtotal;
   const due        = data.due        || grandTotal;
 
@@ -525,11 +527,17 @@ async function _doSubmit(withSteadfast) {
   };
 
   try {
+    // 1. PDF generate
     await generatePDF(formData, invNo);
+
+    // 2. Sheet-এ আগে save করো (Steadfast-এর আগে — race condition fix)
     const sheetResult = await saveToGoogleSheets(formData, invNo);
 
+    // 3. Steadfast order (Sheet save নিশ্চিত হওয়ার পরে)
     let sfResult = null;
     if (withSteadfast && typeof createSteadfastOrder === 'function') {
+      // ছোট delay দাও — Sheet-এ row commit হওয়ার সময় দেওয়া
+      await new Promise(r => setTimeout(r, 800));
       sfResult = await createSteadfastOrder(formData, invNo);
     }
 

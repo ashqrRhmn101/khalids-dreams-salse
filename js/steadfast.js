@@ -131,21 +131,48 @@ function renderSfBadge(info) {
 
 // ── CREATE STEADFAST ORDER ──
 async function createSteadfastOrder(formData, invNo) {
-  const address = [
+  // Build full address for Steadfast label
+  const addressParts = [
     formData.address,
     formData.thana,
     formData.district,
-  ].filter(Boolean).join(', ');
+  ].filter(Boolean);
+  const fullAddress = addressParts.join(', ');
 
   const result = await sfCall({
-    action:      'steadfast_order',
-    invoiceNo:   invNo,
-    name:        formData.name,
-    phone:       formData.phone,
-    address:     address,
-    codAmount:   formData.due || formData.grandTotal || 0,
-    note:        formData.note || '',
+    action:    'steadfast_order',
+    invoiceNo: invNo,           // ★ This shows on shipping label
+    name:      formData.name,
+    phone:     formData.phone,
+    address:   fullAddress,
+    codAmount: formData.due || formData.grandTotal || 0,
+    note:      formData.note || '',
   });
+
+  if (result.success) {
+    console.log('Steadfast order created:', result.trackingCode, result.consignmentId);
+  }
+  return result;
+}
+
+// ── CANCEL STEADFAST ORDER ──
+async function cancelSteadfastOrder(consignmentId, invoiceNo) {
+  if (!confirm(`Invoice ${invoiceNo} — Steadfast-এ বাতিল করবেন?`)) return;
+
+  const result = await sfCall({
+    action:        'steadfast_cancel',
+    consignmentId: consignmentId,
+    invoiceNo:     invoiceNo,
+  });
+
+  if (result.success) {
+    showToast('success', 'বাতিল সফল ✅', `${invoiceNo} Steadfast-এ বাতিল হয়েছে।`);
+    trackingLoaded = false;
+    if (typeof window.allSales !== 'undefined') window.allSales = [];
+    await initTracking();
+  } else {
+    showToast('error', 'সমস্যা', result.message || 'বাতিল করা যায়নি।');
+  }
   return result;
 }
 
