@@ -1,5 +1,5 @@
 // =====================================================
-//  Khalid's Dreams — Google Apps Script v12
+//  Khalid's Dreams — Google Apps Script v13
 //  Actions: fetch | save | payment
 //           steadfast_order | steadfast_track
 //           steadfast_balance | update_statuses
@@ -117,12 +117,13 @@ function doGet(e) {
   if (p.action === 'steadfast_order') {
     try {
       const payload = JSON.stringify({
-        invoice          : p.invoiceNo  || '',
-        recipient_name   : p.name       || '',
+        invoice          : String(p.invoiceNo || ''),   // ★ Must be string for label
+        recipient_name   : String(p.name      || ''),
         recipient_phone  : normalizePhone_(p.phone),
-        recipient_address: p.address    || '',
+        recipient_address: String(p.address   || ''),
         cod_amount       : parseFloat(p.codAmount) || 0,
-        note             : p.note       || '',
+        note             : String(p.note || ''),
+        item_type        : 'parcel',                    // required by Steadfast
       });
 
       const resp   = UrlFetchApp.fetch(STEADFAST_BASE_URL + '/create_order', {
@@ -277,6 +278,38 @@ function doGet(e) {
         }
       }
       return jsonp_(cb, { success: found, message: found ? 'Updated' : 'Invoice not found' });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── STEADFAST: অর্ডার বাতিল করো ──
+  if (p.action === 'steadfast_cancel') {
+    try {
+      // Steadfast cancel endpoint
+      const resp   = UrlFetchApp.fetch(
+        STEADFAST_BASE_URL + '/update_payment_status',
+        {
+          method:  'POST',
+          headers: steadfastHeaders_(),
+          payload: JSON.stringify({ consignment_id: p.consignmentId }),
+          muteHttpExceptions: true,
+        }
+      );
+      const result = JSON.parse(resp.getContentText());
+
+      // Update Sheet status to cancelled
+      if (p.invoiceNo) {
+        const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+        const rows  = sheet.getDataRange().getValues();
+        for (let i = 1; i < rows.length; i++) {
+          if (String(rows[i][0]) === String(p.invoiceNo)) {
+            sheet.getRange(i + 1, 18).setValue('cancelled'); // R
+            break;
+          }
+        }
+      }
+      return jsonp_(cb, { success: true, data: result });
     } catch(err) {
       return jsonp_(cb, { success: false, error: err.message });
     }
