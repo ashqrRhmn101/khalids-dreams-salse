@@ -1,12 +1,7 @@
 // ══════════════════════════════════════════════
 //  Khalid's Dreams — Sales App v12
+//  SHEET_URL loaded from config.js
 // ══════════════════════════════════════════════
-
-// // If config.js not found, fallback empty (will show error on submit)
-// if (typeof SHEET_URL === 'undefined') {
-//   console.error('config.js not loaded! SHEET_URL missing.');
-//   var SHEET_URL = '';
-// }
 
 // ── STATE ──
 let orderItems  = [];
@@ -311,6 +306,7 @@ async function generatePDF(data, invNo) {
   const advance    = data.advance    || 0;
   const courier    = data.courier    || 0;
   const discount   = data.discount   || 0;
+  const prevDue    = data.prevDue    || 0;
   const grandTotal = data.grandTotal || subtotal;
   const due        = data.due        || grandTotal;
 
