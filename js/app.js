@@ -28,7 +28,7 @@ function normalizePhone(phone) {
 }
 
 // ── CUSTOMER AUTO-FILL (repeat customer lookup) ──
-let customerLookupCache = null; // { phone: {name, district, thana, address} }
+let customerLookupCache   = null;
 let customerLookupLoading = false;
 
 async function ensureCustomerLookup() {
@@ -36,21 +36,26 @@ async function ensureCustomerLookup() {
   if (customerLookupLoading) return null;
   customerLookupLoading = true;
 
-  const sales = (typeof allSales !== 'undefined' && allSales && allSales.length)
-    ? allSales
-    : await fetchSalesDataSafe();
+  // ★ Always fetch fresh from Sheet for accurate due calculation
+  // Do NOT use allSales cache — it may have stale due values after payment
+  const sales = await fetchSalesDataSafe();
+
+  // Also update allSales with fresh data
+  if (typeof window.allSales !== 'undefined') window.allSales = sales;
+  if (typeof window.historyLoaded !== 'undefined') window.historyLoaded = true;
 
   const map = {};
   sales.forEach(s => {
     const key = normalizePhone(s.phone);
     if (!key) return;
-    const ts = s.timestamp ? new Date(s.timestamp).getTime() : 0;
+    const ts  = s.timestamp ? new Date(s.timestamp).getTime() : 0;
     if (!map[key]) {
       map[key] = { name:'', district:'', thana:'', address:'', _ts:0, previousDue:0 };
     }
-    // accumulate due from all invoices of this phone
-    map[key].previousDue += parseFloat(s.due) || 0;
-    // keep latest customer info
+    // ★ Only count due > 0 from Sheet (post-payment Sheet has 0 for paid invoices)
+    const due = parseFloat(s.due) || 0;
+    if (due > 0) map[key].previousDue += due;
+
     if (ts > map[key]._ts) {
       map[key]._ts      = ts;
       map[key].name     = s.name     || map[key].name;
@@ -60,17 +65,35 @@ async function ensureCustomerLookup() {
     }
   });
 
-  customerLookupCache = map;
+  customerLookupCache   = map;
   customerLookupLoading = false;
   return map;
 }
 
-// Safe fetch wrapper in case history.js fetchSalesData isn't loaded yet
+// Safe fetch wrapper — works even if history.js not loaded
 async function fetchSalesDataSafe() {
+  // If history.js fetchSalesData is available, use it
   if (typeof fetchSalesData === 'function') {
-    try { return await fetchSalesData(); } catch(e) { return []; }
+    try {
+      const data = await fetchSalesData();
+      if (data && data.length) return data;
+    } catch(e) {}
   }
-  return [];
+  // Fallback: direct JSONP fetch using SHEET_URL
+  if (!SHEET_URL) return [];
+  return new Promise((resolve) => {
+    const cb = 'safeFetch_' + Date.now();
+    window[cb] = (resp) => {
+      delete window[cb];
+      try { document.head.removeChild(sc); } catch(e){}
+      resolve(resp.success ? (resp.data || []) : []);
+    };
+    const sc = document.createElement('script');
+    sc.src = SHEET_URL + '?action=fetch&callback=' + cb;
+    sc.onerror = () => { delete window[cb]; resolve([]); };
+    setTimeout(() => { if (window[cb]) { delete window[cb]; resolve([]); } }, 12000);
+    document.head.appendChild(sc);
+  });
 }
 
 async function onPhoneInputLookup(inputEl) {
@@ -532,8 +555,8 @@ async function _doSubmit(withSteadfast) {
     // 3. Steadfast order (Sheet save নিশ্চিত হওয়ার পরে)
     let sfResult = null;
     if (withSteadfast && typeof createSteadfastOrder === 'function') {
-      // ছোট delay দাও — Sheet-এ row commit হওয়ার সময় দেওয়া
-      await new Promise(r => setTimeout(r, 800));
+      // 1500ms delay — Sheet-এ row properly commit হওয়ার সময়
+      await new Promise(r => setTimeout(r, 1500));
       sfResult = await createSteadfastOrder(formData, invNo);
     }
 
@@ -558,6 +581,10 @@ async function _doSubmit(withSteadfast) {
 
     customerLookupCache = null;
     if (typeof sfPhoneCache !== 'undefined') sfPhoneCache = {};
+    // ★ Clear allSales so next customer lookup fetches fresh Sheet data
+    if (typeof window.allSales !== 'undefined') window.allSales = [];
+    if (typeof window.historyLoaded !== 'undefined') window.historyLoaded = false;
+    if (typeof window.customerLoaded !== 'undefined') window.customerLoaded = false;
     setTimeout(resetForm, 2000);
 
   } catch(e) {

@@ -259,13 +259,18 @@ function renderTrackingList() {
   }
 
   list.innerHTML = filtered.map(s => {
-    const sf = sfStatusLabel(s.sfStatus);
+    const sf          = sfStatusLabel(s.sfStatus);
+    const consignId   = s.sfConsign || '';
+    const statusLower = (s.sfStatus || '').toLowerCase();
+    const isFinal     = ['delivered','cancelled','returned','partial_delivered'].includes(statusLower);
+
     return `
     <div class="tracking-card">
       <div class="tracking-card-top">
         <div class="tracking-inv">
           <span class="inv-badge">${s.invoiceNo}</span>
           ${s.trackingCode ? `<span class="tracking-code">🔖 ${s.trackingCode}</span>` : ''}
+          ${consignId ? `<span class="tracking-code" style="background:rgba(59,130,246,.12);color:#93c5fd;">ID: ${consignId}</span>` : ''}
         </div>
         <span class="sf-status-tag" style="background:${sf.color}22;color:${sf.color};border:1px solid ${sf.color}44;">
           ${sf.label}
@@ -284,7 +289,15 @@ function renderTrackingList() {
       </div>
       <div class="tracking-card-footer">
         <span class="tc-date">${s.datetime ? s.datetime.split(' at ')[0] : '—'}</span>
-        ${s.sfConsign ? `<button class="tr-refresh-btn" onclick="refreshSingleStatus('${s.sfConsign}','${s.invoiceNo}',this)">🔄 আপডেট করুন</button>` : ''}
+        <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;">
+          ${consignId ? `<button class="tr-refresh-btn" onclick="refreshSingleStatus('${consignId}','${s.invoiceNo}',this)">🔄 আপডেট</button>` : ''}
+          ${consignId && !isFinal
+            ? `<button class="tr-cancel-btn" onclick="cancelSteadfastOrder('${consignId}','${s.invoiceNo}')">❌ বাতিল</button>`
+            : ''}
+          ${!consignId
+            ? `<span style="font-size:.68rem;color:var(--white-dim);">Consignment ID নেই — Steadfast-এ চেক করুন</span>`
+            : ''}
+        </div>
       </div>
     </div>`;
   }).join('');

@@ -1,5 +1,5 @@
 // =====================================================
-//  Khalid's Dreams — Google Apps Script v14
+//  Khalid's Dreams — Google Apps Script v15
 //  ✅ Security: সব API key Properties Service-এ
 //  Actions: fetch | save | payment | edit_invoice
 //           steadfast_order | steadfast_track
@@ -188,17 +188,22 @@ function doGet(e) {
         const sfId     = String(consign.id || '');
         const status   = consign.status || 'pending';
 
+        // ★ Search from BOTTOM — latest row is most likely the new invoice
         const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
         const rows  = sheet.getDataRange().getValues();
-        for (let i = 1; i < rows.length; i++) {
-          if (String(rows[i][0]) === String(p.invoiceNo)) {
-            sheet.getRange(i + 1, 17).setValue(tracking);
-            sheet.getRange(i + 1, 18).setValue(status);
-            sheet.getRange(i + 1, 19).setValue(sfId);
+        let   found = false;
+        for (let i = rows.length - 1; i >= 1; i--) {
+          if (String(rows[i][0]).trim() === String(p.invoiceNo).trim()) {
+            sheet.getRange(i + 1, 17).setValue(tracking); // Q — Tracking Code
+            sheet.getRange(i + 1, 18).setValue(status);   // R — Delivery Status
+            sheet.getRange(i + 1, 19).setValue(sfId);     // S — Consignment ID
+            found = true;
             break;
           }
         }
-        return jsonp_(cb, { success: true, trackingCode: tracking, consignmentId: sfId, status });
+        if (!found) Logger.log('Invoice not found in sheet: ' + p.invoiceNo);
+
+        return jsonp_(cb, { success: true, trackingCode: tracking, consignmentId: sfId, status, sheetUpdated: found });
       } else {
         return jsonp_(cb, { success: false, message: result.message || 'Steadfast order failed' });
       }
