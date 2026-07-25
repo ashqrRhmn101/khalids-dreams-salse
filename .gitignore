@@ -3,6 +3,8 @@ config.js
 .env
 .env.local
 secrets.js
+config.example.js
+google-apps-script.js
 
 # OS
 .DS_Store

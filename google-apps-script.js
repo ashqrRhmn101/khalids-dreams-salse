@@ -1,5 +1,5 @@
 // =====================================================
-//  Khalid's Dreams — Google Apps Script v15
+//  Khalid's Dreams — Google Apps Script v16
 //  ✅ Security: সব API key Properties Service-এ
 //  Actions: fetch | save | payment | edit_invoice
 //           steadfast_order | steadfast_track
@@ -67,6 +67,12 @@ function getFraudBdBaseUrl_() {
 
 // ════════════════════════════════════════════════════
 function doGet(e) {
+  // Safety check — manual test run-এ e undefined হতে পারে
+  if (!e || !e.parameter) {
+    return ContentService
+      .createTextOutput('callback({"success":false,"error":"No parameters provided"})')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   const p  = e.parameter;
   const cb = p.callback || 'callback';
 
