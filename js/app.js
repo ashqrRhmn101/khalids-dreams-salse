@@ -28,21 +28,21 @@ function normalizePhone(phone) {
 }
 
 // ── CUSTOMER AUTO-FILL (repeat customer lookup) ──
-let customerLookupCache   = null;
-let customerLookupLoading = false;
+// window scope — dues.js, customers.js সবাই clear করতে পারবে
+window.customerLookupCache   = null;
+window.customerLookupLoading = false;
 
 async function ensureCustomerLookup() {
-  if (customerLookupCache) return customerLookupCache;
-  if (customerLookupLoading) return null;
-  customerLookupLoading = true;
+  if (window.customerLookupCache) return window.customerLookupCache;
+  if (window.customerLookupLoading) return null;
+  window.customerLookupLoading = true;
 
-  // ★ Always fetch fresh from Sheet for accurate due calculation
-  // Do NOT use allSales cache — it may have stale due values after payment
+  // সবসময় fresh fetch — stale due দেখানো বন্ধ
   const sales = await fetchSalesDataSafe();
 
-  // Also update allSales with fresh data
-  if (typeof window.allSales !== 'undefined') window.allSales = sales;
-  if (typeof window.historyLoaded !== 'undefined') window.historyLoaded = true;
+  // অন্য pages-এর জন্যও update করো
+  window.allSales      = sales;
+  window.historyLoaded = true;
 
   const map = {};
   sales.forEach(s => {
@@ -52,7 +52,7 @@ async function ensureCustomerLookup() {
     if (!map[key]) {
       map[key] = { name:'', district:'', thana:'', address:'', _ts:0, previousDue:0 };
     }
-    // ★ Only count due > 0 from Sheet (post-payment Sheet has 0 for paid invoices)
+    // Sheet-এ due=0 মানে পরিশোধ হয়েছে — শুধু >0 গুলো যোগ করো
     const due = parseFloat(s.due) || 0;
     if (due > 0) map[key].previousDue += due;
 
@@ -65,8 +65,8 @@ async function ensureCustomerLookup() {
     }
   });
 
-  customerLookupCache   = map;
-  customerLookupLoading = false;
+  window.customerLookupCache   = map;
+  window.customerLookupLoading = false;
   return map;
 }
 
@@ -579,7 +579,8 @@ async function _doSubmit(withSteadfast) {
                             : 'PDF হয়েছে। Sheet চেক করুন।');
     }
 
-    customerLookupCache = null;
+    window.customerLookupCache = null;
+    window.customerLookupLoading = false;
     if (typeof sfPhoneCache !== 'undefined') sfPhoneCache = {};
     // ★ Clear allSales so next customer lookup fetches fresh Sheet data
     if (typeof window.allSales !== 'undefined') window.allSales = [];
