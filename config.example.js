@@ -1,6 +1,6 @@
 // ══════════════════════════════════════════════
-//  config.example.js — Template (GitHub-এ push করা যাবে)
-//  Copy করে config.js বানাও, তারপর URL বসাও
+//  config.example.js — 
+//  Copy করে config.js 
 // ══════════════════════════════════════════════
 
 const SHEET_URL  = 'YOUR_APPS_SCRIPT_URL_HERE';
