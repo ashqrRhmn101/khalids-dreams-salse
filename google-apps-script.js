@@ -1,30 +1,22 @@
 // =====================================================
-//  Khalid's Dreams — Google Apps Script v16
-//  ✅ Security: সব API key Properties Service-এ
-//  Actions: fetch | save | payment | edit_invoice
+//  Khalid's Dreams — Google Apps Script v17
+//  Actions: fetch | save | payment
 //           steadfast_order | steadfast_track
-//           steadfast_balance | steadfast_cancel
-//           update_statuses | fraudbd_check
+//           steadfast_balance | update_statuses
+//  Base URL: https://portal.packzy.com/api/v1
 // =====================================================
 
-// ══ KEY SETUP — একবার run করো, তারপর আর লাগবে না ══
-// Apps Script editor-এ setSecretKeys() function select করে ▶️ Run করো
-function setSecretKeys() {
-  const props = PropertiesService.getScriptProperties();
-  props.setProperties({
-    'STEADFAST_API_KEY'    : 'oumpa8mpf0c5dfa0slj8dxrdprl2b0s8',
-    'STEADFAST_SECRET_KEY' : 'btu7xsynyy2p8sy8u8bdqnlr',
-    'STEADFAST_BASE_URL'   : 'https://portal.packzy.com/api/v1',
-    'FRAUDBD_API_KEY'      : 'fe9a118ac2332c87c85cbd9b5b7b5af6f6b27e0974ece6360d189401bd78777a',
-    'FRAUDBD_BASE_URL'     : 'https://fraudbd.com',
-  });
-  Logger.log('✅ Keys saved to Properties Service securely!');
-}
+// ══ CONFIG — মাসে একবার শুধু এই দুটো line বদলাও ══
+const STEADFAST_API_KEY    = 'oumpa8mpf0c5dfa0slj8dxrdprl2b0s8';
+const STEADFAST_SECRET_KEY = 'btu7xsynyy2p8sy8u8bdqnlr';
+const STEADFAST_BASE_URL   = 'https://portal.packzy.com/api/v1';
 // ════════════════════════════════════════════════════
+// FraudBD API — Customer fraud check
+const FRAUDBD_API_KEY = 'fe9a118ac2332c87c85cbd9b5b7b5af6f6b27e0974ece6360d189401bd78777a';
+const FRAUDBD_BASE_URL = 'https://fraudbd.com';
 
-// ── Runtime: Properties থেকে key পড়ো ──
-function getProps_() {
-  return PropertiesService.getScriptProperties().getProperties();
+function fraudBdHeaders_() {
+  return { 'Authorization': 'Bearer ' + FRAUDBD_API_KEY, 'Content-Type': 'application/json' };
 }
 
 function normalizePhone_(phone) {
@@ -41,38 +33,15 @@ function jsonp_(cb, data) {
 }
 
 function steadfastHeaders_() {
-  const props = getProps_();
   return {
-    'Api-Key'     : props.STEADFAST_API_KEY,
-    'Secret-Key'  : props.STEADFAST_SECRET_KEY,
+    'Api-Key'     : STEADFAST_API_KEY,
+    'Secret-Key'  : STEADFAST_SECRET_KEY,
     'Content-Type': 'application/json',
   };
 }
 
-function fraudBdHeaders_() {
-  const props = getProps_();
-  return {
-    'Authorization': 'Bearer ' + props.FRAUDBD_API_KEY,
-    'Content-Type' : 'application/json',
-  };
-}
-
-function getSteadfastBaseUrl_() {
-  return getProps_().STEADFAST_BASE_URL || 'https://portal.packzy.com/api/v1';
-}
-
-function getFraudBdBaseUrl_() {
-  return getProps_().FRAUDBD_BASE_URL || 'https://fraudbd.com';
-}
-
 // ════════════════════════════════════════════════════
 function doGet(e) {
-  // Safety check — manual test run-এ e undefined হতে পারে
-  if (!e || !e.parameter) {
-    return ContentService
-      .createTextOutput('callback({"success":false,"error":"No parameters provided"})')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
-  }
   const p  = e.parameter;
   const cb = p.callback || 'callback';
 
@@ -128,17 +97,162 @@ function doGet(e) {
         const due = parseFloat(r[12]) || 0;
         if (due > 0) dueRows.push({ rowIdx: i + 1, due });
       }
-      dueRows.sort((a, b) => a.rowIdx - b.rowIdx);
+      dueRows.sort((a, b) => a.rowIdx - b.rowIdx); // পুরনো invoice আগে
       const updated = [];
       for (const row of dueRows) {
         if (remaining <= 0) break;
         const deduct = Math.min(remaining, row.due);
         const newDue = parseFloat((row.due - deduct).toFixed(2));
-        sheet.getRange(row.rowIdx, 13).setValue(newDue);
+        sheet.getRange(row.rowIdx, 13).setValue(newDue); // M = Due
         updated.push({ row: row.rowIdx, oldDue: row.due, newDue });
         remaining = parseFloat((remaining - deduct).toFixed(2));
       }
       return jsonp_(cb, { success: true, updated, remaining });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── STEADFAST: নতুন অর্ডার তৈরি ──
+  if (p.action === 'steadfast_order') {
+    try {
+      const payload = JSON.stringify({
+        invoice          : p.invoiceNo  || '',
+        recipient_name   : p.name       || '',
+        recipient_phone  : normalizePhone_(p.phone),
+        recipient_address: p.address    || '',
+        cod_amount       : parseFloat(p.codAmount) || 0,
+        note             : p.note       || '',
+      });
+
+      const resp   = UrlFetchApp.fetch(STEADFAST_BASE_URL + '/create_order', {
+        method: 'POST', headers: steadfastHeaders_(),
+        payload: payload, muteHttpExceptions: true,
+      });
+      const result = JSON.parse(resp.getContentText());
+
+      if (result.status === 200 && result.consignment) {
+        const consign  = result.consignment;
+        const tracking = consign.tracking_code || '';
+        const sfId     = String(consign.id || '');
+        const status   = consign.status || 'pending';
+
+        // Sheet-এ tracking code, status, consignment ID save করো
+        const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+        const rows  = sheet.getDataRange().getValues();
+        for (let i = 1; i < rows.length; i++) {
+          if (String(rows[i][0]) === String(p.invoiceNo)) {
+            sheet.getRange(i + 1, 17).setValue(tracking); // Q
+            sheet.getRange(i + 1, 18).setValue(status);   // R
+            sheet.getRange(i + 1, 19).setValue(sfId);     // S
+            break;
+          }
+        }
+        return jsonp_(cb, { success: true, trackingCode: tracking, consignmentId: sfId, status });
+      } else {
+        return jsonp_(cb, {
+          success: false,
+          message: result.message || 'Steadfast order failed',
+        });
+      }
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── STEADFAST: Consignment ID দিয়ে status check ──
+  if (p.action === 'steadfast_track') {
+    try {
+      const resp   = UrlFetchApp.fetch(
+        STEADFAST_BASE_URL + '/status_by_cid/' + p.consignmentId,
+        { method: 'GET', headers: steadfastHeaders_(), muteHttpExceptions: true }
+      );
+      const result = JSON.parse(resp.getContentText());
+      return jsonp_(cb, { success: true, data: result });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── STEADFAST: Account Balance ──
+  if (p.action === 'steadfast_balance') {
+    try {
+      const resp   = UrlFetchApp.fetch(
+        STEADFAST_BASE_URL + '/get_balance',
+        { method: 'GET', headers: steadfastHeaders_(), muteHttpExceptions: true }
+      );
+      const result = JSON.parse(resp.getContentText());
+      return jsonp_(cb, { success: true, balance: result.current_balance || 0 });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── STEADFAST: সব pending order-এর status batch update ──
+  if (p.action === 'update_statuses') {
+    try {
+      const sheet   = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+      const rows    = sheet.getDataRange().getValues();
+      let   updated = 0;
+      const finalStatuses = ['delivered', 'cancelled', 'partial_delivered', 'returned'];
+
+      for (let i = 1; i < rows.length; i++) {
+        const sfId   = String(rows[i][18] || ''); // S = consignment ID
+        if (!sfId) continue;
+        const status = String(rows[i][17] || '').toLowerCase(); // R = status
+        if (finalStatuses.includes(status)) continue; // final status হলে skip
+
+        try {
+          const resp = UrlFetchApp.fetch(
+            STEADFAST_BASE_URL + '/status_by_cid/' + sfId,
+            { method: 'GET', headers: steadfastHeaders_(), muteHttpExceptions: true }
+          );
+          const res       = JSON.parse(resp.getContentText());
+          const newStatus = String(res.delivery_status || res.status || '').toLowerCase();
+          if (newStatus && newStatus !== status) {
+            sheet.getRange(i + 1, 18).setValue(newStatus);
+            updated++;
+          }
+        } catch(e) { /* individual error skip */ }
+        Utilities.sleep(300); // rate limit — 300ms gap
+      }
+      return jsonp_(cb, { success: true, updated });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── FRAUDBD: Phone দিয়ে customer history check ──
+  if (p.action === 'fraudbd_check') {
+    try {
+      const phone = normalizePhone_(p.phone);
+      const resp  = UrlFetchApp.fetch(
+        FRAUDBD_BASE_URL + '/api/check-phone/' + phone,
+        { method: 'GET', headers: fraudBdHeaders_(), muteHttpExceptions: true }
+      );
+      const code   = resp.getResponseCode();
+      const result = JSON.parse(resp.getContentText());
+
+      if (code === 200 && result.status) {
+        const sf  = (result.data && result.data.Summaries && result.data.Summaries.Steadfast) || {};
+        const all = result.data && result.data.totalSummary || {};
+        return jsonp_(cb, {
+          success: true,
+          steadfast: {
+            total:   sf.total   || 0,
+            success: sf.success || 0,
+            cancel:  sf.cancel  || 0,
+          },
+          allCouriers: {
+            total:   all.total   || 0,
+            success: all.success || 0,
+            cancel:  all.cancel  || 0,
+          },
+          raw: result.data,
+        });
+      } else {
+        return jsonp_(cb, { success: false, message: result.message || 'Not found', code });
+      }
     } catch(err) {
       return jsonp_(cb, { success: false, error: err.message });
     }
@@ -152,12 +266,12 @@ function doGet(e) {
       let   found = false;
       for (let i = 1; i < rows.length; i++) {
         if (String(rows[i][0]) === String(p.invoiceNo)) {
-          if (p.total    !== undefined) sheet.getRange(i+1, 12).setValue(parseFloat(p.total)    || 0);
-          if (p.courier  !== undefined) sheet.getRange(i+1,  9).setValue(parseFloat(p.courier)  || 0);
-          if (p.discount !== undefined) sheet.getRange(i+1, 10).setValue(parseFloat(p.discount) || 0);
-          if (p.advance  !== undefined) sheet.getRange(i+1, 11).setValue(parseFloat(p.advance)  || 0);
-          if (p.due      !== undefined) sheet.getRange(i+1, 13).setValue(parseFloat(p.due)      || 0);
-          if (p.note     !== undefined) sheet.getRange(i+1, 15).setValue(p.note || '');
+          if (p.total    !== undefined) sheet.getRange(i+1, 12).setValue(parseFloat(p.total)   || 0); // L
+          if (p.courier  !== undefined) sheet.getRange(i+1,  9).setValue(parseFloat(p.courier) || 0); // I
+          if (p.discount !== undefined) sheet.getRange(i+1, 10).setValue(parseFloat(p.discount)|| 0); // J
+          if (p.advance  !== undefined) sheet.getRange(i+1, 11).setValue(parseFloat(p.advance) || 0); // K
+          if (p.due      !== undefined) sheet.getRange(i+1, 13).setValue(parseFloat(p.due)     || 0); // M
+          if (p.note     !== undefined) sheet.getRange(i+1, 15).setValue(p.note || '');               // O
           found = true;
           break;
         }
@@ -168,197 +282,30 @@ function doGet(e) {
     }
   }
 
-  // ── STEADFAST: নতুন অর্ডার তৈরি ──
-  if (p.action === 'steadfast_order') {
-    try {
-      const BASE = getSteadfastBaseUrl_();
-      const payload = JSON.stringify({
-        invoice          : String(p.invoiceNo || ''),
-        recipient_name   : String(p.name      || ''),
-        recipient_phone  : normalizePhone_(p.phone),
-        recipient_address: String(p.address   || ''),
-        cod_amount       : parseFloat(p.codAmount) || 0,
-        note             : String(p.note || ''),
-        item_type        : 'parcel',
-      });
-
-      const resp   = UrlFetchApp.fetch(BASE + '/create_order', {
-        method: 'POST', headers: steadfastHeaders_(),
-        payload: payload, muteHttpExceptions: true,
-      });
-      const result = JSON.parse(resp.getContentText());
-
-      if (result.status === 200 && result.consignment) {
-        const consign  = result.consignment;
-        const tracking = consign.tracking_code || '';
-        const sfId     = String(consign.id || '');
-        const status   = consign.status || 'pending';
-
-        // ★ Search from BOTTOM — latest row is most likely the new invoice
-        const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-        const rows  = sheet.getDataRange().getValues();
-        let   found = false;
-        for (let i = rows.length - 1; i >= 1; i--) {
-          if (String(rows[i][0]).trim() === String(p.invoiceNo).trim()) {
-            sheet.getRange(i + 1, 17).setValue(tracking); // Q — Tracking Code
-            sheet.getRange(i + 1, 18).setValue(status);   // R — Delivery Status
-            sheet.getRange(i + 1, 19).setValue(sfId);     // S — Consignment ID
-            found = true;
-            break;
-          }
-        }
-        if (!found) Logger.log('Invoice not found in sheet: ' + p.invoiceNo);
-
-        return jsonp_(cb, { success: true, trackingCode: tracking, consignmentId: sfId, status, sheetUpdated: found });
-      } else {
-        return jsonp_(cb, { success: false, message: result.message || 'Steadfast order failed' });
-      }
-    } catch(err) {
-      return jsonp_(cb, { success: false, error: err.message });
-    }
-  }
-
-  // ── STEADFAST: Status by consignment ID ──
-  if (p.action === 'steadfast_track') {
-    try {
-      const BASE = getSteadfastBaseUrl_();
-      const resp   = UrlFetchApp.fetch(
-        BASE + '/status_by_cid/' + p.consignmentId,
-        { method: 'GET', headers: steadfastHeaders_(), muteHttpExceptions: true }
-      );
-      return jsonp_(cb, { success: true, data: JSON.parse(resp.getContentText()) });
-    } catch(err) {
-      return jsonp_(cb, { success: false, error: err.message });
-    }
-  }
-
-  // ── STEADFAST: Account Balance ──
-  if (p.action === 'steadfast_balance') {
-    try {
-      const BASE   = getSteadfastBaseUrl_();
-      const resp   = UrlFetchApp.fetch(
-        BASE + '/get_balance',
-        { method: 'GET', headers: steadfastHeaders_(), muteHttpExceptions: true }
-      );
-      const result = JSON.parse(resp.getContentText());
-      return jsonp_(cb, { success: true, balance: result.current_balance || 0 });
-    } catch(err) {
-      return jsonp_(cb, { success: false, error: err.message });
-    }
-  }
-
-  // ── STEADFAST: অর্ডার বাতিল ──
-  if (p.action === 'steadfast_cancel') {
-    try {
-      const BASE   = getSteadfastBaseUrl_();
-      const resp   = UrlFetchApp.fetch(BASE + '/update_payment_status', {
-        method:  'POST',
-        headers: steadfastHeaders_(),
-        payload: JSON.stringify({ consignment_id: p.consignmentId }),
-        muteHttpExceptions: true,
-      });
-      const result = JSON.parse(resp.getContentText());
-
-      if (p.invoiceNo) {
-        const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-        const rows  = sheet.getDataRange().getValues();
-        for (let i = 1; i < rows.length; i++) {
-          if (String(rows[i][0]) === String(p.invoiceNo)) {
-            sheet.getRange(i + 1, 18).setValue('cancelled');
-            break;
-          }
-        }
-      }
-      return jsonp_(cb, { success: true, data: result });
-    } catch(err) {
-      return jsonp_(cb, { success: false, error: err.message });
-    }
-  }
-
-  // ── STEADFAST: Batch status update ──
-  if (p.action === 'update_statuses') {
-    try {
-      const BASE    = getSteadfastBaseUrl_();
-      const sheet   = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-      const rows    = sheet.getDataRange().getValues();
-      let   updated = 0;
-      const finalSt = ['delivered', 'cancelled', 'partial_delivered', 'returned'];
-
-      for (let i = 1; i < rows.length; i++) {
-        const sfId  = String(rows[i][18] || '');
-        if (!sfId) continue;
-        const status = String(rows[i][17] || '').toLowerCase();
-        if (finalSt.includes(status)) continue;
-        try {
-          const resp      = UrlFetchApp.fetch(BASE + '/status_by_cid/' + sfId,
-            { method: 'GET', headers: steadfastHeaders_(), muteHttpExceptions: true });
-          const res       = JSON.parse(resp.getContentText());
-          const newStatus = String(res.delivery_status || res.status || '').toLowerCase();
-          if (newStatus && newStatus !== status) {
-            sheet.getRange(i + 1, 18).setValue(newStatus);
-            updated++;
-          }
-        } catch(e) {}
-        Utilities.sleep(300);
-      }
-      return jsonp_(cb, { success: true, updated });
-    } catch(err) {
-      return jsonp_(cb, { success: false, error: err.message });
-    }
-  }
-
-  // ── FRAUDBD: Phone দিয়ে customer history ──
-  if (p.action === 'fraudbd_check') {
-    try {
-      const BASE   = getFraudBdBaseUrl_();
-      const phone  = normalizePhone_(p.phone);
-      const resp   = UrlFetchApp.fetch(
-        BASE + '/api/check-phone/' + phone,
-        { method: 'GET', headers: fraudBdHeaders_(), muteHttpExceptions: true }
-      );
-      const code   = resp.getResponseCode();
-      const result = JSON.parse(resp.getContentText());
-
-      if (code === 200 && result.status) {
-        const sf  = (result.data && result.data.Summaries && result.data.Summaries.Steadfast) || {};
-        const all = (result.data && result.data.totalSummary) || {};
-        return jsonp_(cb, {
-          success: true,
-          steadfast:   { total: sf.total||0,  success: sf.success||0,  cancel: sf.cancel||0  },
-          allCouriers: { total: all.total||0, success: all.success||0, cancel: all.cancel||0 },
-        });
-      } else {
-        return jsonp_(cb, { success: false, message: result.message || 'Not found', code });
-      }
-    } catch(err) {
-      return jsonp_(cb, { success: false, error: err.message });
-    }
-  }
-
-  // ── SAVE — নতুন sale ──
+  // ── SAVE — নতুন sale Google Sheet-এ save ──
   try {
     const sheet  = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     const invNo  = p.invoiceNo || ('KD-' + Date.now().toString().slice(-6));
     sheet.appendRow([
-      invNo,
-      p.name       || '',
-      "'" + normalizePhone_(p.phone),
-      p.district   || '',
-      p.thana      || '',
-      p.address    || '',
-      p.items      || '',
-      parseFloat(p.subtotal) || 0,  // H
-      parseFloat(p.courier)  || 0,  // I
-      parseFloat(p.discount) || 0,  // J
-      parseFloat(p.advance)  || 0,  // K
-      parseFloat(p.total)    || 0,  // L — Grand Total
-      parseFloat(p.due)      || 0,  // M — Due
-      p.datetime   || '',            // N
-      p.note       || '',            // O
-      p.timestamp  || '',            // P
-      '',                            // Q — Tracking Code
-      '',                            // R — Delivery Status
-      '',                            // S — Consignment ID
+      invNo,                              // A — Invoice No
+      p.name       || '',                 // B — Customer Name
+      "'" + normalizePhone_(p.phone),    // C — Phone (force text, leading 0 রক্ষা)
+      p.district   || '',                 // D — District
+      p.thana      || '',                 // E — Thana
+      p.address    || '',                 // F — Address
+      p.items      || '',                 // G — Products
+      parseFloat(p.subtotal) || 0,       // H — Subtotal
+      parseFloat(p.courier)  || 0,       // I — Courier Charge
+      parseFloat(p.discount) || 0,       // J — Discount
+      parseFloat(p.advance)  || 0,       // K — Advance
+      parseFloat(p.total)    || 0,       // L — Grand Total
+      parseFloat(p.due)      || 0,       // M — Due
+      p.datetime   || '',                 // N — Date & Time
+      p.note       || '',                 // O — Note
+      p.timestamp  || '',                 // P — Timestamp
+      '',                                 // Q — Tracking Code (Steadfast)
+      '',                                 // R — Delivery Status
+      '',                                 // S — Consignment ID
     ]);
     return jsonp_(cb, { success: true, invoice: invNo });
   } catch(err) {
@@ -369,32 +316,19 @@ function doGet(e) {
 function doPost(e) { return doGet(e); }
 
 // ════════════════════════════════════════════════════
-// ── Manual Functions ──
+// ── Manual Functions — Apps Script editor থেকে run করো ──
 // ════════════════════════════════════════════════════
 
-// ★ STEP 1: এটা প্রথমে run করো — সব key Properties-এ save হবে
-function setSecretKeys() {
-  PropertiesService.getScriptProperties().setProperties({
-    'STEADFAST_API_KEY'    : 'oumpa8mpf0c5dfa0slj8dxrdprl2b0s8',
-    'STEADFAST_SECRET_KEY' : 'btu7xsynyy2p8sy8u8bdqnlr',
-    'STEADFAST_BASE_URL'   : 'https://portal.packzy.com/api/v1',
-    'FRAUDBD_API_KEY'      : 'fe9a118ac2332c87c85cbd9b5b7b5af6f6b27e0974ece6360d189401bd78777a',
-    'FRAUDBD_BASE_URL'     : 'https://fraudbd.com',
-  });
-  Logger.log('✅ All keys saved securely!');
-}
-
-// API connection test
+// API connection test — balance check
 function testConnection() {
-  const BASE = getSteadfastBaseUrl_();
-  const resp = UrlFetchApp.fetch(BASE + '/get_balance', {
+  const resp = UrlFetchApp.fetch(STEADFAST_BASE_URL + '/get_balance', {
     method: 'GET', headers: steadfastHeaders_(), muteHttpExceptions: true,
   });
   Logger.log('Status: ' + resp.getResponseCode());
-  Logger.log('Response: ' + resp.getContentText());
+  Logger.log('Balance: ' + resp.getContentText());
 }
 
-// Phone number fix — একবার run করলেই হবে
+// সব পুরনো phone number-এ 0 যোগ করো (একবার run করলেই হবে)
 function fixExistingPhoneNumbers() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const rows  = sheet.getDataRange().getValues();
@@ -403,33 +337,38 @@ function fixExistingPhoneNumbers() {
     const fixed = normalizePhone_(cur);
     if (fixed && fixed !== cur) sheet.getRange(i + 1, 3).setValue("'" + fixed);
   }
-  Logger.log('✅ Phone numbers fixed!');
+  Logger.log('Phone numbers fixed!');
 }
 
-// Steadfast সব pending status refresh
+// সব pending Steadfast order-এর status refresh করো
 function refreshAllStatuses() {
-  const BASE       = getSteadfastBaseUrl_();
-  const sheet      = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  const rows       = sheet.getDataRange().getValues();
-  let   updated    = 0;
-  const finalSt    = ['delivered', 'cancelled', 'partial_delivered', 'returned'];
+  const sheet        = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const rows         = sheet.getDataRange().getValues();
+  let   updated      = 0;
+  const finalStatuses = ['delivered', 'cancelled', 'partial_delivered', 'returned'];
+
   for (let i = 1; i < rows.length; i++) {
     const sfId  = String(rows[i][18] || '');
     if (!sfId) continue;
     const status = String(rows[i][17] || '').toLowerCase();
-    if (finalSt.includes(status)) continue;
+    if (finalStatuses.includes(status)) continue;
+
     try {
-      const resp = UrlFetchApp.fetch(BASE + '/status_by_cid/' + sfId,
-        { method: 'GET', headers: steadfastHeaders_(), muteHttpExceptions: true });
+      const resp = UrlFetchApp.fetch(
+        STEADFAST_BASE_URL + '/status_by_cid/' + sfId,
+        { method: 'GET', headers: steadfastHeaders_(), muteHttpExceptions: true }
+      );
       const res       = JSON.parse(resp.getContentText());
       const newStatus = String(res.delivery_status || res.status || '').toLowerCase();
       if (newStatus && newStatus !== status) {
         sheet.getRange(i + 1, 18).setValue(newStatus);
         updated++;
-        Logger.log('Row ' + (i+1) + ': ' + status + ' → ' + newStatus);
+        Logger.log('Updated row ' + (i+1) + ': ' + status + ' → ' + newStatus);
       }
-    } catch(e) { Logger.log('Error row ' + (i+1) + ': ' + e.message); }
+    } catch(e) {
+      Logger.log('Error row ' + (i+1) + ': ' + e.message);
+    }
     Utilities.sleep(300);
   }
-  Logger.log('✅ Total updated: ' + updated);
+  Logger.log('Total updated: ' + updated);
 }
