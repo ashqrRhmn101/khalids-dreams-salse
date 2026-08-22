@@ -28,34 +28,29 @@ function normalizePhone(phone) {
 }
 
 // ── CUSTOMER AUTO-FILL (repeat customer lookup) ──
-// window scope — dues.js, customers.js সবাই clear করতে পারবে
-window.customerLookupCache   = null;
-window.customerLookupLoading = false;
+let customerLookupCache = null; // { phone: {name, district, thana, address} }
+let customerLookupLoading = false;
 
 async function ensureCustomerLookup() {
-  if (window.customerLookupCache) return window.customerLookupCache;
-  if (window.customerLookupLoading) return null;
-  window.customerLookupLoading = true;
+  if (customerLookupCache) return customerLookupCache;
+  if (customerLookupLoading) return null;
+  customerLookupLoading = true;
 
-  // সবসময় fresh fetch — stale due দেখানো বন্ধ
-  const sales = await fetchSalesDataSafe();
-
-  // অন্য pages-এর জন্যও update করো
-  window.allSales      = sales;
-  window.historyLoaded = true;
+  const sales = (typeof allSales !== 'undefined' && allSales && allSales.length)
+    ? allSales
+    : await fetchSalesDataSafe();
 
   const map = {};
   sales.forEach(s => {
     const key = normalizePhone(s.phone);
     if (!key) return;
-    const ts  = s.timestamp ? new Date(s.timestamp).getTime() : 0;
+    const ts = s.timestamp ? new Date(s.timestamp).getTime() : 0;
     if (!map[key]) {
       map[key] = { name:'', district:'', thana:'', address:'', _ts:0, previousDue:0 };
     }
-    // Sheet-এ due=0 মানে পরিশোধ হয়েছে — শুধু >0 গুলো যোগ করো
-    const due = parseFloat(s.due) || 0;
-    if (due > 0) map[key].previousDue += due;
-
+    // accumulate due from all invoices of this phone
+    map[key].previousDue += parseFloat(s.due) || 0;
+    // keep latest customer info
     if (ts > map[key]._ts) {
       map[key]._ts      = ts;
       map[key].name     = s.name     || map[key].name;
@@ -65,35 +60,17 @@ async function ensureCustomerLookup() {
     }
   });
 
-  window.customerLookupCache   = map;
-  window.customerLookupLoading = false;
+  customerLookupCache = map;
+  customerLookupLoading = false;
   return map;
 }
 
-// Safe fetch wrapper — works even if history.js not loaded
+// Safe fetch wrapper in case history.js fetchSalesData isn't loaded yet
 async function fetchSalesDataSafe() {
-  // If history.js fetchSalesData is available, use it
   if (typeof fetchSalesData === 'function') {
-    try {
-      const data = await fetchSalesData();
-      if (data && data.length) return data;
-    } catch(e) {}
+    try { return await fetchSalesData(); } catch(e) { return []; }
   }
-  // Fallback: direct JSONP fetch using SHEET_URL
-  if (!SHEET_URL) return [];
-  return new Promise((resolve) => {
-    const cb = 'safeFetch_' + Date.now();
-    window[cb] = (resp) => {
-      delete window[cb];
-      try { document.head.removeChild(sc); } catch(e){}
-      resolve(resp.success ? (resp.data || []) : []);
-    };
-    const sc = document.createElement('script');
-    sc.src = SHEET_URL + '?action=fetch&callback=' + cb;
-    sc.onerror = () => { delete window[cb]; resolve([]); };
-    setTimeout(() => { if (window[cb]) { delete window[cb]; resolve([]); } }, 12000);
-    document.head.appendChild(sc);
-  });
+  return [];
 }
 
 async function onPhoneInputLookup(inputEl) {
@@ -170,7 +147,7 @@ function onDistrictChange() {
 // ── ORDER ITEMS ──
 function addOrderItem() {
   itemCounter++;
-  orderItems.push({ id: itemCounter, name: '', qty: 1, rate: 0, price: 0 });
+  orderItems.push({ id: itemCounter, name: '', qty: 1, rate: 0, price: 0, productId: '', unit: 'কেজি' });
   renderOrderItems();
 }
 
@@ -187,8 +164,8 @@ function updateItem(id, field, value) {
   const item = orderItems.find(i => i.id === id);
   if (!item) return;
   if (field === 'qty')  item.qty  = parseFloat(value) || 0;
-  else if (field === 'rate') item.rate = parseFloat(value) || 0;
-  else if (field === 'name') item.name = value;
+  else if (field === 'rate') { item.rate = parseFloat(value) || 0; item.productId = ''; } // manual rate clears product link
+  else if (field === 'name') { item.name = value; if (field === 'name') item.productId = ''; }
   // auto-calculate price = qty × rate
   item.price = parseFloat((item.qty * item.rate).toFixed(2));
   // update price display
@@ -329,7 +306,6 @@ async function generatePDF(data, invNo) {
   const advance    = data.advance    || 0;
   const courier    = data.courier    || 0;
   const discount   = data.discount   || 0;
-  const prevDue    = data.prevDue    || 0;
   const grandTotal = data.grandTotal || subtotal;
   const due        = data.due        || grandTotal;
 
@@ -546,17 +522,11 @@ async function _doSubmit(withSteadfast) {
   };
 
   try {
-    // 1. PDF generate
     await generatePDF(formData, invNo);
-
-    // 2. Sheet-এ আগে save করো (Steadfast-এর আগে — race condition fix)
     const sheetResult = await saveToGoogleSheets(formData, invNo);
 
-    // 3. Steadfast order (Sheet save নিশ্চিত হওয়ার পরে)
     let sfResult = null;
     if (withSteadfast && typeof createSteadfastOrder === 'function') {
-      // 1500ms delay — Sheet-এ row properly commit হওয়ার সময়
-      await new Promise(r => setTimeout(r, 1500));
       sfResult = await createSteadfastOrder(formData, invNo);
     }
 
@@ -582,10 +552,25 @@ async function _doSubmit(withSteadfast) {
     window.customerLookupCache = null;
     window.customerLookupLoading = false;
     if (typeof sfPhoneCache !== 'undefined') sfPhoneCache = {};
-    // ★ Clear allSales so next customer lookup fetches fresh Sheet data
-    if (typeof window.allSales !== 'undefined') window.allSales = [];
-    if (typeof window.historyLoaded !== 'undefined') window.historyLoaded = false;
-    if (typeof window.customerLoaded !== 'undefined') window.customerLoaded = false;
+    window.allSales = [];
+    window.historyLoaded = false;
+    window.customerLoaded = false;
+
+    // ★ Stock update — sold items থেকে stock কমাও
+    if (typeof products !== 'undefined' && products.length) {
+      for (const item of formData.items) {
+        if (!item.productId) continue;
+        const prod = products.find(p => p.id === item.productId);
+        if (!prod) continue;
+        const newStock = Math.max(0, parseFloat((prod.stock - (item.qty || 0)).toFixed(3)));
+        if (newStock !== prod.stock) {
+          prod.stock = newStock;
+          updateStockInSheet(prod.id, newStock).catch(()=>{});
+        }
+      }
+      localStorage.setItem('kd_products', JSON.stringify(products));
+      if (typeof renderAll === 'function') renderAll();
+    }
     setTimeout(resetForm, 2000);
 
   } catch(e) {
