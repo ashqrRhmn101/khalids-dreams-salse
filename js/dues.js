@@ -324,14 +324,11 @@ async function processPayment() {
     if (result.success) {
       closePaymentModal();
       showToast('success', 'পরিশোধ সফল! ✅', `৳${amount.toLocaleString('en-US')} পরিশোধ রেকর্ড হয়েছে।`);
-      // ★ Clear ALL caches — app.js, history.js, customers.js
+      // Refresh data
       duesLoaded = false;
-      window.customerLookupCache   = null;  // app.js cache (window scope)
-      window.customerLookupLoading = false;
-      window.allSales         = [];
-      window.historyLoaded    = false;
-      window.customerLoaded   = false;
-      window.duesLoaded       = false;
+      customerLookupCache = null;
+      if (typeof allSales !== 'undefined') window.allSales = [];
+      if (typeof historyLoaded !== 'undefined') window.historyLoaded = false;
       await initDues();
     } else {
       showToast('error', 'সমস্যা', result.message || 'Sheet আপডেট হয়নি।');
