@@ -246,8 +246,7 @@ async function completeOrder(id) {
     renderTrackerStats();
     renderPendingList();
     showToast('success', 'সম্পন্ন!', 'PDF ডাউনলোড ও Google Sheets-এ সেভ হয়েছে।');
-    window.customerLookupCache = null; // refresh lookup cache
-    window.customerLookupLoading = false;
+    customerLookupCache = null; // refresh lookup cache
 
   } catch(e) {
     console.error(e);
