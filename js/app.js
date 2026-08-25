@@ -177,28 +177,45 @@ function updateItem(id, field, value) {
 function renderOrderItems() {
   const c = document.getElementById('order-items-container');
   c.innerHTML = '';
+
+  // Build product options from products array (loaded by products.js)
+  const hasProd = typeof products !== 'undefined' && products.length > 0;
+  const prodOpts = hasProd
+    ? products.map(p =>
+        `<option value="${p.id}" data-price="${p.unitPrice}" data-unit="${p.unit}" data-name="${p.name}">
+          ${p.name} — ৳${p.unitPrice}/${p.unit}
+        </option>`).join('')
+    : '';
+
   orderItems.forEach((item, idx) => {
     const row = document.createElement('div');
     row.className = 'item-row-v7';
     row.innerHTML = `
       <div class="item-row-top">
         <div class="serial">${idx + 1}</div>
-        <div class="form-group" style="margin:0;flex:1;">
+        <div class="form-group" style="margin:0;flex:1;display:flex;gap:6px;align-items:center;">
+          ${hasProd ? `
+          <select class="product-select" onchange="onProductSelect(${item.id},this)"
+            style="width:auto;min-width:130px;flex:0 0 auto;font-size:.8rem;padding:9px 10px;color:var(--gold-light);">
+            <option value="">📦 তালিকা থেকে</option>
+            ${prodOpts}
+          </select>` : ''}
           <input type="text" placeholder="পণ্যের নাম..." value="${item.name}"
-            oninput="updateItem(${item.id},'name',this.value)" />
+            oninput="updateItem(${item.id},'name',this.value)"
+            style="flex:1;" />
         </div>
         <button class="remove-item-btn" onclick="removeOrderItem(${item.id})" title="সরান">✕</button>
       </div>
       <div class="item-row-bottom">
         <div class="form-group" style="margin:0;">
-          <label style="font-size:.62rem;color:var(--white-dim);">পরিমাণ (কেজি)</label>
+          <label style="font-size:.62rem;color:var(--white-dim);">পরিমাণ (${item.unit||'কেজি'})</label>
           <input type="number" placeholder="0.5" value="${item.qty||''}" min="0" step="0.1"
             oninput="updateItem(${item.id},'qty',this.value)" />
         </div>
         <div class="item-multiply">×</div>
         <div class="form-group" style="margin:0;">
-          <label style="font-size:.62rem;color:var(--white-dim);">দর (৳/কেজি)</label>
-          <input type="number" placeholder="500" value="${item.rate||''}" min="0"
+          <label style="font-size:.62rem;color:var(--white-dim);">দর (৳/${item.unit||'কেজি'})</label>
+          <input type="number" placeholder="500" value="${item.rate||''}" min="0" id="rate-${item.id}"
             oninput="updateItem(${item.id},'rate',this.value)" />
         </div>
         <div class="item-equals">=</div>
@@ -210,8 +227,54 @@ function renderOrderItems() {
         </div>
       </div>`;
     c.appendChild(row);
+
+    // Restore selected product if any
+    if (item.productId && hasProd) {
+      const sel = row.querySelector('.product-select');
+      if (sel) sel.value = item.productId;
+    }
   });
 }
+
+// ── Product select → auto-fill name + rate ──
+function onProductSelect(itemId, selectEl) {
+  const opt = selectEl.options[selectEl.selectedIndex];
+  if (!opt || !opt.value) return;
+
+  const price = parseFloat(opt.dataset.price) || 0;
+  const name  = opt.dataset.name  || '';
+  const unit  = opt.dataset.unit  || 'কেজি';
+  const item  = orderItems.find(i => i.id === itemId);
+  if (!item) return;
+
+  item.name      = name;
+  item.rate      = price;
+  item.productId = opt.value;
+  item.unit      = unit;
+  item.price     = parseFloat(((item.qty || 1) * price).toFixed(2));
+
+  // Update name input
+  const nameInput = selectEl.closest('.item-row-top')?.querySelector('input[type="text"]');
+  if (nameInput) nameInput.value = name;
+
+  // Update rate input
+  const rateEl = document.getElementById('rate-' + itemId);
+  if (rateEl) rateEl.value = price;
+
+  // Update unit labels
+  const labels = selectEl.closest('.item-row-v7')?.querySelectorAll('.item-row-bottom label');
+  if (labels) {
+    labels.forEach(l => { l.textContent = l.textContent.replace(/কেজি|গ্রাম|লিটার|পিস|প্যাকেট/, unit); });
+  }
+
+  // Update price display
+  const priceEl = document.getElementById('price-display-' + itemId);
+  if (priceEl) priceEl.textContent = '৳ ' + item.price.toLocaleString('en-US', {minimumFractionDigits:2});
+
+  updateOrderSubtotal();
+}
+
+
 
 function updateOrderSubtotal() {
   const sub = orderItems.reduce((s,i) => s + i.price, 0);
