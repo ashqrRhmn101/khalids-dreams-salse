@@ -305,25 +305,41 @@
     <p>পণ্য যোগ করুন, এডিট করুন এবং স্টক ট্র্যাক করুন</p>
   </div>
   <div class="product-page-inner">
+
+    <!-- Stock Summary -->
     <div class="stock-summary">
       <div class="stock-stat total"><span class="s-num" id="p-total">0</span><span class="s-lbl">মোট পণ্য</span></div>
       <div class="stock-stat low-s"><span class="s-num" id="p-low">0</span><span class="s-lbl">কম স্টক</span></div>
       <div class="stock-stat out-s"><span class="s-num" id="p-out">0</span><span class="s-lbl">স্টক নেই</span></div>
     </div>
+
+    <!-- Add Product Form -->
     <div class="add-product-card">
-      <div class="section-title" style="margin-bottom:1rem;"><div class="icon">➕</div>নতুন পণ্য যোগ করুন</div>
+      <div class="section-title" style="margin-bottom:1rem;">
+        <div class="icon">➕</div>নতুন পণ্য যোগ করুন
+      </div>
       <div class="form-grid">
         <div class="form-group">
           <label>পণ্যের নাম *</label>
-          <input type="text" id="p-name" placeholder="যেমন: মধু ৫০০গ্রাম..." />
+          <input type="text" id="p-name" placeholder="যেমন: সরিষার মধু..." />
         </div>
         <div class="form-group">
-          <label>মূল্য (৳) *</label>
-          <input type="number" id="p-price" placeholder="মূল্য লিখুন..." min="0" inputmode="numeric" />
+          <label>দর (৳/একক) *</label>
+          <input type="number" id="p-price" placeholder="প্রতি কেজি/গ্রামের দাম..." min="0" step="0.01" inputmode="decimal" />
         </div>
         <div class="form-group">
           <label>স্টক পরিমাণ</label>
-          <input type="number" id="p-stock" placeholder="কতটা আছে?" min="0" inputmode="numeric" />
+          <input type="number" id="p-stock-qty" placeholder="কতটা আছে?" min="0" step="0.1" inputmode="decimal" />
+        </div>
+        <div class="form-group">
+          <label>একক</label>
+          <select id="p-unit">
+            <option value="কেজি">কেজি (kg)</option>
+            <option value="গ্রাম">গ্রাম (g)</option>
+            <option value="লিটার">লিটার (L)</option>
+            <option value="পিস">পিস</option>
+            <option value="প্যাকেট">প্যাকেট</option>
+          </select>
         </div>
         <div class="form-group">
           <label>ক্যাটাগরি</label>
@@ -337,14 +353,24 @@
             <option value="অন্যান্য" selected>📦 অন্যান্য</option>
           </select>
         </div>
-      </div>
-      <div style="margin-top:.75rem;text-align:right;">
-        <button class="submit-btn" onclick="addProduct()" style="width:auto;padding:11px 28px;font-size:.9rem;">
-          ➕ পণ্য যোগ করুন
-        </button>
+        <div class="form-group" style="align-self:flex-end;">
+          <button class="submit-btn" id="add-product-btn" onclick="addProduct()"
+            style="width:100%;padding:12px;font-size:.9rem;">
+            ➕ পণ্য যোগ করুন
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Category Filter -->
     <div class="cat-filter" id="cat-filter"></div>
+
+    <!-- Refresh -->
+    <div style="text-align:right;margin-bottom:.5rem;">
+      <button class="refresh-btn" onclick="refreshProducts()">🔄 Sheet থেকে রিফ্রেশ</button>
+    </div>
+
+    <!-- Product Grid -->
     <div class="product-grid" id="product-grid"></div>
   </div>
 </div>
