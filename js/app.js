@@ -352,6 +352,8 @@ function validateForm() {
 }
 
 async function generatePDF(data, invNo) {
+  let prevDue = 0;
+
   const validItems = data.items.filter(i => i.name.trim());
 
   const itemRows = validItems.map((item, idx) => `
