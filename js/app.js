@@ -678,7 +678,31 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDailyDisplay();
   updateNavClock();
   setInterval(updateNavClock, 30000);
-  setDateTime(); // ★ Auto-set datetime on page load
+  setDateTime();
+
+  // ★ Pre-load products in background so dropdown is ready on home page
+  // Try localStorage cache first (instant), then fetch from Sheet
+  const cached = localStorage.getItem('kd_products');
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length) {
+        if (typeof products !== 'undefined') {
+          products.length = 0;
+          parsed.forEach(p => products.push(p));
+        }
+        renderOrderItems(); // re-render with dropdown
+      }
+    } catch(e) {}
+  }
+
+  // Always fetch fresh from Sheet in background
+  if (typeof fetchProductsFromSheet === 'function') {
+    fetchProductsFromSheet().then(() => {
+      renderOrderItems(); // re-render with updated dropdown
+      if (typeof refreshOrderItemDropdowns === 'function') refreshOrderItemDropdowns();
+    }).catch(() => {});
+  }
 
   // Auto-fill on phone input pause / blur
   const phoneEl = document.getElementById('cust-phone');

@@ -1,17 +1,17 @@
 // ══════════════════════════════════════════════
 //  Khalid's Dreams — Product Catalog v3
 //  Google Sheet "Products" sync + Stock tracking
-//  + Details modal + Dropdown in order form
 // ══════════════════════════════════════════════
+
+// ★ window scope — app.js DOMContentLoaded-এ access করতে পারবে
+window.products       = window.products       || [];
+window.productsLoaded = window.productsLoaded || false;
 
 const CATEGORIES = ['সব','মধু','ঘি','তেল','চাল','ডাল','মসলা','অন্যান্য'];
 const CAT_EMOJI  = {'মধু':'🍯','ঘি':'🧈','তেল':'🫙','চাল':'🌾','ডাল':'🫘','মসলা':'🌶️','অন্যান্য':'📦'};
-const UNITS      = ['কেজি','গ্রাম','লিটার','পিস','প্যাকেট'];
 
-let products       = [];
-let editingId      = null;
-let activeFilter   = 'সব';
-let productsLoaded = false;
+let editingId    = null;
+let activeFilter = 'সব';
 
 // ── JSONP call using SHEET_URL from config.js ──
 function productSheetCall(params) {
@@ -45,7 +45,7 @@ function genProductId() {
 async function fetchProductsFromSheet() {
   const result = await productSheetCall({ action: 'fetch_products' });
   if (result.success && Array.isArray(result.data)) {
-    products = result.data.map(r => ({
+    window.products = result.data.map(r => ({
       id:        r.id        || genProductId(),
       name:      r.name      || '',
       category:  r.category  || 'অন্যান্য',
@@ -55,12 +55,12 @@ async function fetchProductsFromSheet() {
       details:   r.details   || '',
       rowIndex:  r.rowIndex  || 0,
     }));
-    localStorage.setItem('kd_products', JSON.stringify(products));
+    localStorage.setItem('kd_products', JSON.stringify(window.products));
     return true;
   }
   // Fallback: localStorage cache
   const cached = localStorage.getItem('kd_products');
-  if (cached) products = JSON.parse(cached);
+  if (cached) window.products = JSON.parse(cached);
   return false;
 }
 
@@ -94,9 +94,9 @@ function renderProductSummary() {
   const totalEl = document.getElementById('p-total');
   const lowEl   = document.getElementById('p-low');
   const outEl   = document.getElementById('p-out');
-  if (totalEl) totalEl.textContent = products.length;
-  if (lowEl)   lowEl.textContent   = products.filter(p => p.stock > 0 && p.stock <= 5).length;
-  if (outEl)   outEl.textContent   = products.filter(p => p.stock <= 0).length;
+  if (totalEl) totalEl.textContent = window.products.length;
+  if (lowEl)   lowEl.textContent   = window.products.filter(p => p.stock > 0 && p.stock <= 5).length;
+  if (outEl)   outEl.textContent   = window.products.filter(p => p.stock <= 0).length;
 }
 
 // ── CATEGORY FILTER ──
@@ -120,8 +120,8 @@ function renderProductGrid() {
   if (!grid) return;
 
   const filtered = activeFilter === 'সব'
-    ? products
-    : products.filter(p => p.category === activeFilter);
+    ? window.products
+    : window.products.filter(p => p.category === activeFilter);
 
   if (!filtered.length) {
     grid.innerHTML = `
@@ -179,8 +179,8 @@ async function addProduct() {
 
   if (result.success) {
     product.rowIndex = result.rowIndex || 0;
-    products.unshift(product);
-    localStorage.setItem('kd_products', JSON.stringify(products));
+    window.products.unshift(product);
+    localStorage.setItem('kd_products', JSON.stringify(window.products));
 
     // Clear form
     ['p-name','p-price','p-stock-qty'].forEach(id => {
@@ -201,13 +201,13 @@ async function addProduct() {
 // ── DELETE PRODUCT ──
 async function deleteProduct(id) {
   if (!confirm('এই পণ্যটি মুছে ফেলবেন?')) return;
-  const product = products.find(p => p.id === id);
+  const product = window.products.find(p => p.id === id);
   if (!product) return;
 
   const result = await deleteProductFromSheet(id, product.rowIndex);
   if (result.success) {
-    products = products.filter(p => p.id !== id);
-    localStorage.setItem('kd_products', JSON.stringify(products));
+    window.products = window.products.filter(p => p.id !== id);
+    localStorage.setItem('kd_products', JSON.stringify(window.products));
     renderAll();
     refreshOrderItemDropdowns();
     showToast('success','মুছে গেছে','পণ্যটি তালিকা থেকে সরানো হয়েছে।');
@@ -218,7 +218,7 @@ async function deleteProduct(id) {
 
 // ── EDIT MODAL ──
 function openEditModal(id) {
-  const p = products.find(x => x.id === id);
+  const p = window.products.find(x => x.id === id);
   if (!p) return;
   editingId = id;
 
@@ -238,7 +238,7 @@ function closeEditModal() {
 }
 
 async function saveEditProduct() {
-  const p = products.find(x => x.id === editingId);
+  const p = window.products.find(x => x.id === editingId);
   if (!p) return;
 
   const getVal = (id) => document.getElementById(id)?.value || '';
@@ -255,7 +255,7 @@ async function saveEditProduct() {
 
   const result = await saveProductToSheet(p);
   if (result.success) {
-    localStorage.setItem('kd_products', JSON.stringify(products));
+    localStorage.setItem('kd_products', JSON.stringify(window.products));
     closeEditModal();
     renderAll();
     refreshOrderItemDropdowns();
@@ -268,7 +268,7 @@ async function saveEditProduct() {
 
 // ── PRODUCT DETAILS MODAL ──
 function openProductDetails(id) {
-  const p = products.find(x => x.id === id);
+  const p = window.products.find(x => x.id === id);
   if (!p) return;
   window._detailProductId = id;
 
@@ -286,7 +286,7 @@ function closeProductDetails() {
 
 async function saveProductDetails() {
   const id = window._detailProductId;
-  const p  = products.find(x => x.id === id);
+  const p  = window.products.find(x => x.id === id);
   if (!p) return;
 
   p.details = document.getElementById('pd-details')?.value || '';
@@ -296,7 +296,7 @@ async function saveProductDetails() {
 
   const result = await saveProductToSheet(p);
   if (result.success) {
-    localStorage.setItem('kd_products', JSON.stringify(products));
+    localStorage.setItem('kd_products', JSON.stringify(window.products));
     closeProductDetails();
     showToast('success','সেভ হয়েছে ✅','বিস্তারিত সেভ হয়েছে।');
   } else {
@@ -311,7 +311,7 @@ function refreshOrderItemDropdowns() {
   document.querySelectorAll('.product-select').forEach(sel => {
     const current = sel.value;
     sel.innerHTML = '<option value="">📦 তালিকা থেকে বেছে নিন</option>' +
-      products.map(p =>
+      window.products.map(p =>
         `<option value="${p.id}" data-price="${p.unitPrice}" data-unit="${p.unit}" data-name="${p.name}">
           ${CAT_EMOJI[p.category]||'📦'} ${p.name} — ৳${p.unitPrice}/${p.unit}
         </option>`
@@ -329,7 +329,7 @@ function renderAll() {
 
 // ── INIT ──
 async function initProducts() {
-  if (productsLoaded) { renderAll(); refreshOrderItemDropdowns(); return; }
+  if (window.productsLoaded) { renderAll(); refreshOrderItemDropdowns(); return; }
 
   const grid = document.getElementById('product-grid');
   if (grid) grid.innerHTML = `
@@ -338,16 +338,16 @@ async function initProducts() {
     </div>`;
 
   const ok = await fetchProductsFromSheet();
-  productsLoaded = true;
+  window.productsLoaded = true;
   renderAll();
   refreshOrderItemDropdowns();
 
-  if (!ok && products.length === 0) {
+  if (!ok && window.products.length === 0) {
     showToast('error','লোড সমস্যা','Sheet থেকে পণ্য আনা যায়নি। Cache ব্যবহার হচ্ছে।');
   }
 }
 
 function refreshProducts() {
-  productsLoaded = false;
+  window.productsLoaded = false;
   initProducts();
 }
