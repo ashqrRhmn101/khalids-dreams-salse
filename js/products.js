@@ -144,17 +144,32 @@ function renderProductGrid() {
 
 // ── ADD PRODUCT ──
 async function addProduct() {
-  const name      = document.getElementById('p-name').value.trim();
-  const unitPrice = parseFloat(document.getElementById('p-price').value);
-  const stock     = parseFloat(document.getElementById('p-stock-qty').value) || 0;
-  const unit      = document.getElementById('p-unit').value || 'কেজি';
-  const cat       = document.getElementById('p-category').value;
+  const nameInput  = document.getElementById('p-name');
+  const priceInput = document.getElementById('p-price');
+  const stockInput = document.getElementById('p-stock');   // ✅ HTML এ p-stock আছে
+  const unitInput  = document.getElementById('p-unit');    // ❌ HTML এ নেই, তাই optional
+  const catInput   = document.getElementById('p-category');
+  const btn        = document.querySelector('.submit-btn'); // ✅ HTML এ add-product-btn নেই, submit-btn আছে
 
-  if (!name)                 return showToast('error','দরকারি','পণ্যের নাম দিন।');
-  if (!unitPrice || unitPrice<=0) return showToast('error','দরকারি','সঠিক মূল্য দিন।');
+  // Null-check
+  if (!nameInput || !priceInput || !stockInput || !catInput || !btn) {
+    console.error("One or more input fields/buttons not found!");
+    return;
+  }
 
-  const btn = document.getElementById('add-product-btn');
-  btn.disabled = true; btn.textContent = 'যোগ হচ্ছে...';
+  const name      = nameInput.value.trim();
+  const unitPrice = parseFloat(priceInput.value);
+  const stock     = parseFloat(stockInput.value) || 0;
+  const unit      = unitInput?.value || 'কেজি'; // optional chaining
+  const cat       = catInput.value;
+
+  // Validation
+  if (!name) return showToast('error','দরকারি','পণ্যের নাম দিন।');
+  if (!unitPrice || unitPrice <= 0) return showToast('error','দরকারি','সঠিক মূল্য দিন।');
+
+  // Button disable
+  btn.disabled = true;
+  btn.textContent = 'যোগ হচ্ছে...';
 
   const product = { id: genId(), name, category: cat, unitPrice, stock, unit, details: '', rowIndex: 0 };
   const result  = await saveProductToSheet(product);
@@ -163,17 +178,22 @@ async function addProduct() {
     product.rowIndex = result.rowIndex || 0;
     products.unshift(product);
     localStorage.setItem('kd_products', JSON.stringify(products));
-    document.getElementById('p-name').value      = '';
-    document.getElementById('p-price').value     = '';
-    document.getElementById('p-stock-qty').value = '';
+
+    // Reset fields
+    nameInput.value  = '';
+    priceInput.value = '';
+    stockInput.value = '';
+
     renderAll();
-    // Refresh order item dropdowns
     refreshOrderItemDropdowns();
     showToast('success','যোগ হয়েছে!',`"${name}" পণ্য তালিকায় যোগ হয়েছে।`);
   } else {
     showToast('error','সমস্যা','Sheet-এ save হয়নি। আবার চেষ্টা করুন।');
   }
-  btn.disabled = false; btn.textContent = '➕ পণ্য যোগ করুন';
+
+  // Button enable
+  btn.disabled = false;
+  btn.textContent = '➕ পণ্য যোগ করুন';
 }
 
 // ── DELETE PRODUCT ──

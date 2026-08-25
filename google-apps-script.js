@@ -40,8 +40,14 @@ function steadfastHeaders_() {
   };
 }
 
-// ════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════..
 function doGet(e) {
+  // Safety check — manual test run-এ e undefined হতে পারে
+  if (!e || !e.parameter) {
+    return ContentService
+      .createTextOutput('callback({"success":false,"error":"No parameters provided"})')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   const p  = e.parameter;
   const cb = p.callback || 'callback';
 
@@ -81,6 +87,96 @@ function doGet(e) {
       return jsonp_(cb, { success: false, error: err.message });
     }
   }
+
+  // ── PRODUCTS: সব পণ্য ফেচ ──
+if (p.action === 'fetch_products') {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Products");
+    if (!sheet) return jsonp_(cb, { success: false, error: "Products sheet not found" });
+
+    const rows = sheet.getDataRange().getValues();
+    const data = [];
+    for (let i = 1; i < rows.length; i++) {
+      if (!rows[i][0]) continue;
+      data.push({
+        id:       rows[i][0],
+        name:     rows[i][1],
+        category: rows[i][2],
+        unit:     rows[i][3],
+        unitPrice:parseFloat(rows[i][4]) || 0,
+        stock:    parseFloat(rows[i][5]) || 0,
+        details:  rows[i][6] || '',
+        rowIndex: i+1
+      });
+    }
+    return jsonp_(cb, { success: true, data });
+  } catch(err) {
+    return jsonp_(cb, { success: false, error: err.message });
+  }
+}
+
+// ── PRODUCTS: নতুন পণ্য সেভ ──
+if (p.action === 'save_product') {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Products");
+    if (!sheet) return jsonp_(cb, { success: false, error: "Products sheet not found" });
+
+    if (p.rowIndex && parseInt(p.rowIndex) > 0) {
+      // Update existing row
+      sheet.getRange(p.rowIndex, 2).setValue(p.name || '');
+      sheet.getRange(p.rowIndex, 3).setValue(p.category || '');
+      sheet.getRange(p.rowIndex, 4).setValue(p.unit || 'কেজি');
+      sheet.getRange(p.rowIndex, 5).setValue(parseFloat(p.unitPrice) || 0);
+      sheet.getRange(p.rowIndex, 6).setValue(parseFloat(p.stock) || 0);
+      sheet.getRange(p.rowIndex, 7).setValue(p.details || '');
+    } else {
+      // Add new row
+      const id = p.id || ("P-" + Date.now().toString().slice(-6));
+      sheet.appendRow([
+        id, p.name || '', p.category || '', p.unit || 'কেজি',
+        parseFloat(p.unitPrice) || 0, parseFloat(p.stock) || 0, p.details || ''
+      ]);
+    }
+    return jsonp_(cb, { success: true });
+  } catch(err) {
+    return jsonp_(cb, { success: false, error: err.message });
+  }
+}
+
+// ── PRODUCTS: ডিলিট ──
+if (p.action === 'delete_product') {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Products");
+    const rows  = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === p.id) {
+        sheet.deleteRow(i+1);
+        return jsonp_(cb, { success: true });
+      }
+    }
+    return jsonp_(cb, { success: false, error: "Product not found" });
+  } catch(err) {
+    return jsonp_(cb, { success: false, error: err.message });
+  }
+}
+
+// ── PRODUCTS: স্টক আপডেট ──
+if (p.action === 'update_stock') {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Products");
+    const rows  = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === p.id) {
+        sheet.getRange(i+1, 6).setValue(parseFloat(p.stock) || 0);
+        return jsonp_(cb, { success: true });
+      }
+    }
+    return jsonp_(cb, { success: false, error: "Product not found" });
+  } catch(err) {
+    return jsonp_(cb, { success: false, error: err.message });
+  }
+}
+
 
   // ── PAYMENT — বাকি পরিশোধ (FIFO) ──
   if (p.action === 'payment') {
