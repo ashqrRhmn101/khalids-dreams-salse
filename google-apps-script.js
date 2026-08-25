@@ -42,6 +42,12 @@ function steadfastHeaders_() {
 
 // ════════════════════════════════════════════════════
 function doGet(e) {
+  // Safety check — manual test run-এ e undefined হতে পারে
+  if (!e || !e.parameter) {
+    return ContentService
+      .createTextOutput('callback({"success":false,"error":"No parameters provided"})')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   const p  = e.parameter;
   const cb = p.callback || 'callback';
 
@@ -277,6 +283,110 @@ function doGet(e) {
         }
       }
       return jsonp_(cb, { success: found, message: found ? 'Updated' : 'Invoice not found' });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── FETCH PRODUCTS ──
+  if (p.action === 'fetch_products') {
+    try {
+      const ss    = SpreadsheetApp.getActiveSpreadsheet();
+      let   sheet = ss.getSheetByName('Products');
+      if (!sheet) {
+        sheet = ss.insertSheet('Products');
+        sheet.getRange(1,1,1,7).setValues([['ID','Name','Category','Unit Price (৳)','Stock','Unit','Details']]);
+        sheet.getRange(1,1,1,7).setFontWeight('bold').setBackground('#1a1a1a').setFontColor('#C9A84C');
+        return jsonp_(cb, { success: true, data: [] });
+      }
+      const rows = sheet.getDataRange().getValues();
+      const data = [];
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r[0] && !r[1]) continue;
+        data.push({
+          id:        String(r[0] || ''),
+          name:      String(r[1] || ''),
+          category:  String(r[2] || 'অন্যান্য'),
+          unitPrice: parseFloat(r[3]) || 0,
+          stock:     parseFloat(r[4]) || 0,
+          unit:      String(r[5] || 'কেজি'),
+          details:   String(r[6] || ''),
+          rowIndex:  i + 1,
+        });
+      }
+      return jsonp_(cb, { success: true, data });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── SAVE PRODUCT (new or update) ──
+  if (p.action === 'save_product') {
+    try {
+      const ss    = SpreadsheetApp.getActiveSpreadsheet();
+      let   sheet = ss.getSheetByName('Products');
+      if (!sheet) {
+        sheet = ss.insertSheet('Products');
+        sheet.getRange(1,1,1,7).setValues([['ID','Name','Category','Unit Price (৳)','Stock','Unit','Details']]);
+        sheet.getRange(1,1,1,7).setFontWeight('bold').setBackground('#1a1a1a').setFontColor('#C9A84C');
+      }
+      const rowIdx  = parseInt(p.rowIndex) || 0;
+      const rowData = [
+        String(p.id       || ''),
+        String(p.name     || ''),
+        String(p.category || 'অন্যান্য'),
+        parseFloat(p.unitPrice) || 0,
+        parseFloat(p.stock)     || 0,
+        String(p.unit     || 'কেজি'),
+        String(p.details  || ''),
+      ];
+      let finalRowIdx = rowIdx;
+      if (rowIdx > 1) {
+        sheet.getRange(rowIdx, 1, 1, 7).setValues([rowData]);
+      } else {
+        sheet.appendRow(rowData);
+        finalRowIdx = sheet.getLastRow();
+      }
+      return jsonp_(cb, { success: true, rowIndex: finalRowIdx });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── DELETE PRODUCT ──
+  if (p.action === 'delete_product') {
+    try {
+      const ss    = SpreadsheetApp.getActiveSpreadsheet();
+      const sheet = ss.getSheetByName('Products');
+      if (!sheet) return jsonp_(cb, { success: false, error: 'Products sheet not found' });
+      const rows  = sheet.getDataRange().getValues();
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]) === String(p.id)) {
+          sheet.deleteRow(i + 1);
+          return jsonp_(cb, { success: true });
+        }
+      }
+      return jsonp_(cb, { success: false, error: 'Product not found' });
+    } catch(err) {
+      return jsonp_(cb, { success: false, error: err.message });
+    }
+  }
+
+  // ── UPDATE STOCK — sale-এর পর stock কমানো ──
+  if (p.action === 'update_stock') {
+    try {
+      const ss    = SpreadsheetApp.getActiveSpreadsheet();
+      const sheet = ss.getSheetByName('Products');
+      if (!sheet) return jsonp_(cb, { success: false, error: 'Products sheet not found' });
+      const rows  = sheet.getDataRange().getValues();
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]) === String(p.id)) {
+          sheet.getRange(i + 1, 5).setValue(parseFloat(p.stock) || 0); // E=5 = Stock
+          return jsonp_(cb, { success: true, newStock: parseFloat(p.stock) });
+        }
+      }
+      return jsonp_(cb, { success: false, error: 'Product not found' });
     } catch(err) {
       return jsonp_(cb, { success: false, error: err.message });
     }
