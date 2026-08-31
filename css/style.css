@@ -541,3 +541,101 @@ footer{
 @media(max-width:480px) {
   .product-select { width: 100% !important; }
 }
+
+/* ══ AI Assist ══ */
+.ai-assist-btn {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  border: none;
+  padding: 13px 28px;
+  border-radius: var(--radius);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .25s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(79,70,229,.3);
+  width: 100%;
+  justify-content: center;
+  max-width: 420px;
+  -webkit-tap-highlight-color: transparent;
+}
+.ai-assist-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+
+.ai-extract-btn-main {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  border: none;
+  padding: 13px;
+  border-radius: var(--radius);
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all .25s;
+  box-shadow: 0 4px 20px rgba(79,70,229,.25);
+  -webkit-tap-highlight-color: transparent;
+}
+.ai-extract-btn-main:hover { filter: brightness(1.1); }
+.ai-extract-btn-main:disabled { opacity: .65; cursor: not-allowed; }
+
+/* AI Preview Box */
+.ai-preview-box {
+  background: var(--dark-3);
+  border: 1px solid rgba(79,70,229,.3);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+.ai-preview-title {
+  font-size: .82rem;
+  color: #a5b4fc;
+  font-weight: 700;
+  margin-bottom: .85rem;
+  padding-bottom: .6rem;
+  border-bottom: 1px solid rgba(79,70,229,.2);
+}
+.ai-preview-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  margin-bottom: .85rem;
+}
+.ai-preview-row {
+  display: flex;
+  gap: .5rem;
+  font-size: .82rem;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.ap-label {
+  width: 65px;
+  flex-shrink: 0;
+  color: var(--white-dim);
+  font-size: .75rem;
+}
+.ap-val { color: var(--white); font-weight: 500; }
+
+.ai-preview-items {
+  background: rgba(0,0,0,.2);
+  border-radius: 8px;
+  padding: .75rem;
+  margin-bottom: .85rem;
+}
+.ai-preview-actions {
+  display: flex;
+  gap: .75rem;
+  margin-top: .85rem;
+}
+
+/* Mobile responsive AI button */
+@media(min-width: 600px) {
+  .ai-assist-btn { width: auto; }
+}
