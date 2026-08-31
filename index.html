@@ -92,6 +92,13 @@
   </div>
 
   <div class="main-container">
+    <!-- AI Assist Button -->
+    <div style="text-align:center;margin-bottom:1rem;">
+      <button class="ai-assist-btn" onclick="openAIAssist()">
+        ✨ AI Assist — অর্ডার message paste করুন
+      </button>
+    </div>
+
     <div class="section-card">
       <div class="section-title"><div class="icon">👤</div>গ্রাহকের তথ্য</div>
       <div class="form-grid">
@@ -821,12 +828,54 @@
   </div>
 </div>
 
+
+<!-- AI Assist Modal -->
+<div class="modal-overlay" id="ai-assist-modal">
+  <div class="modal-box" style="max-width:520px;max-height:90vh;overflow-y:auto;">
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;">
+      <div style="width:38px;height:38px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:10px;
+        display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">✨</div>
+      <div>
+        <h3 style="color:var(--white);font-size:1.1rem;margin:0;">AI Assist</h3>
+        <div style="font-size:.75rem;color:var(--white-dim);">অর্ডার message থেকে auto form fill</div>
+      </div>
+      <button onclick="closeAIAssist()" style="margin-left:auto;background:none;border:none;color:var(--white-dim);font-size:1.3rem;cursor:pointer;">✕</button>
+    </div>
+
+    <!-- Input area -->
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label>অর্ডারের text এখানে paste করুন</label>
+      <textarea id="ai-input-text" rows="8"
+        placeholder="যেকোনো ভাষায় paste করুন। যেমন:
+
+নাম: মোঃ করিম
+ফোন: 01712345678
+ঠিকানা: বাড়ি ১২, রোড ৪, ধানমন্ডি, ঢাকা
+পণ্য: মধু ২ কেজি - ৫০০ টাকা/কেজি
+COD: ১০০০ টাকা
+
+অথবা WhatsApp message সরাসরি paste করুন..."
+        style="min-height:160px;font-size:.88rem;line-height:1.6;"></textarea>
+    </div>
+
+    <button class="ai-extract-btn-main" id="ai-extract-btn" onclick="aiExtractOrder()">
+      ✨ Extract করুন
+    </button>
+
+    <!-- Preview area -->
+    <div id="ai-result-preview" style="display:none;margin-top:1rem;"></div>
+
+  </div>
+</div>
+
 <script src="js/app.js"></script>
 <script src="js/products.js"></script>
 <script src="js/tracker.js"></script>
 <script src="js/history.js"></script>
 <script src="js/dues.js"></script>
 <script src="js/steadfast.js"></script>
+<script src="js/ai-assist.js"></script>
 <script src="js/customers.js"></script>
 
 <script>
