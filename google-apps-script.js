@@ -89,35 +89,68 @@ function doGet(e) {
   }
 
   // ── PAYMENT — বাকি পরিশোধ (FIFO) ──
+  // ── google-apps-script.js এ শুধু payment action replace করো ──
   if (p.action === 'payment') {
     try {
       const phone     = normalizePhone_(p.phone);
       let   remaining = parseFloat(p.amount) || 0;
       const sheet     = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-      const rows      = sheet.getDataRange().getValues();
-      const dueRows   = [];
-      for (let i = 1; i < rows.length; i++) {
-        const r = rows[i];
-        if (!r[0]) continue;
-        if (normalizePhone_(r[2]) !== phone) continue;
-        const due = parseFloat(r[12]) || 0;
-        if (due > 0) dueRows.push({ rowIdx: i + 1, due });
+
+      // Fresh read
+      const allRows = sheet.getDataRange().getValues();
+      const headers = allRows[0];
+
+      // Due column dynamically খোঁজো
+      let dueCol = 13; // default M=13
+      for (let c = 0; c < headers.length; c++) {
+        const h = String(headers[c]).toLowerCase().trim();
+        if (h === 'due' || h === 'বাকি') { dueCol = c + 1; break; }
       }
-      dueRows.sort((a, b) => a.rowIdx - b.rowIdx); // পুরনো invoice আগে
+
+      // Phone column খোঁজো
+      let phoneCol = 3; // default C=3
+      for (let c = 0; c < headers.length; c++) {
+        const h = String(headers[c]).toLowerCase().trim();
+        if (h === 'phone' || h === 'ফোন') { phoneCol = c + 1; break; }
+      }
+
+      // Due > 0 rows collect করো
+      const dueRows = [];
+      for (let i = 1; i < allRows.length; i++) {
+        const r = allRows[i];
+        if (!r[0]) continue;
+        if (normalizePhone_(r[phoneCol - 1]) !== phone) continue;
+        const due = parseFloat(r[dueCol - 1]) || 0;
+        if (due > 0.009) dueRows.push({ rowIdx: i + 1, due });
+      }
+
+      // FIFO — পুরনো invoice আগে
+      dueRows.sort((a, b) => a.rowIdx - b.rowIdx);
+
       const updated = [];
       for (const row of dueRows) {
-        if (remaining <= 0) break;
+        if (remaining <= 0.009) break;
         const deduct = Math.min(remaining, row.due);
-        const newDue = parseFloat((row.due - deduct).toFixed(2));
-        sheet.getRange(row.rowIdx, 13).setValue(newDue); // M = Due
+        const newDue = Math.max(0, parseFloat((row.due - deduct).toFixed(2)));
+        sheet.getRange(row.rowIdx, dueCol).setValue(newDue);
         updated.push({ row: row.rowIdx, oldDue: row.due, newDue });
-        remaining = parseFloat((remaining - deduct).toFixed(2));
+        remaining = Math.max(0, parseFloat((remaining - deduct).toFixed(2)));
       }
-      return jsonp_(cb, { success: true, updated, remaining });
+
+      // Force immediate write
+      SpreadsheetApp.flush();
+
+      return jsonp_(cb, {
+        success: true,
+        updated,
+        remaining,
+        message: updated.length + 'টি invoice update হয়েছে'
+      });
     } catch(err) {
       return jsonp_(cb, { success: false, error: err.message });
     }
   }
+
 
   // ── STEADFAST: নতুন অর্ডার তৈরি ──
   if (p.action === 'steadfast_order') {
